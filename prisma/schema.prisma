@@ -1,0 +1,206 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum TipoImovel {
+  apartamento
+  casa
+  terreno
+  sala_comercial
+}
+
+enum Finalidade {
+  venda
+  aluguel
+}
+
+enum StatusImovel {
+  rascunho
+  publicado
+  vendido
+}
+
+enum StatusConversa {
+  ativa
+  encerrada
+}
+
+enum StatusVisita {
+  pedida
+  confirmada
+  realizada
+  cancelada
+}
+
+enum TipoEvento {
+  visualizacao
+  chat_aberto
+  chat_mensagem
+  contato_capturado
+  visita_pedida
+  transferencia
+}
+
+// Corretor = User do Auth.js com campos extras.
+// name/creci são opcionais no banco porque o Auth.js cria o usuário só com e-mail
+// no primeiro login; o painel exige o preenchimento antes de publicar.
+model User {
+  id               String    @id @default(cuid())
+  name             String?
+  email            String    @unique
+  emailVerified    DateTime?
+  image            String?
+  creci            String?
+  whatsapp         String?
+  fotoFileId       String?
+  horariosVisita   Json      @default("{}")
+  duracaoVisitaMin Int       @default(60)
+  criadoEm         DateTime  @default(now())
+
+  accounts Account[]
+  sessions Session[]
+  imoveis  Imovel[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Imovel {
+  id                  String       @id @default(cuid())
+  corretorId          String
+  slug                String       @unique
+  tipo                TipoImovel
+  finalidade          Finalidade
+  titulo              String
+  descricao           String
+  bairro              String
+  cidade              String       @default("Blumenau")
+  endereco            String?
+  mostrarEndereco     Boolean      @default(false)
+  latitude            Decimal?     @db.Decimal(9, 6)
+  longitude           Decimal?     @db.Decimal(9, 6)
+  preco               Decimal      @db.Decimal(14, 2)
+  condominio          Decimal?     @db.Decimal(12, 2)
+  iptu                Decimal?     @db.Decimal(12, 2)
+  quartos             Int
+  suites              Int?
+  banheiros           Int
+  vagas               Int
+  areaM2              Decimal      @db.Decimal(10, 2)
+  aceitaFinanciamento Boolean
+  aceitaFgts          Boolean?
+  caracteristicas     String[]
+  infoAdicional       String?
+  status              StatusImovel @default(rascunho)
+  publicadoEm         DateTime?
+  criadoEm            DateTime     @default(now())
+  atualizadoEm        DateTime     @updatedAt
+
+  corretor  User       @relation(fields: [corretorId], references: [id])
+  fotos     Foto[]
+  conversas Conversa[]
+  visitas   Visita[]
+  eventos   Evento[]
+
+  @@index([corretorId])
+  @@index([status])
+}
+
+model Foto {
+  id       String  @id @default(cuid())
+  imovelId String
+  fileId   String
+  ordem    Int
+  legenda  String?
+
+  imovel Imovel @relation(fields: [imovelId], references: [id], onDelete: Cascade)
+
+  @@index([imovelId, ordem])
+}
+
+model Conversa {
+  id                  String         @id @default(cuid())
+  imovelId            String
+  mensagens           Json           @default("[]")
+  perfilLead          Json?
+  consentimento       Boolean        @default(false)
+  consentimentoEm     DateTime?
+  transferida         Boolean        @default(false)
+  motivoTransferencia String?
+  status              StatusConversa @default(ativa)
+  criadaEm            DateTime       @default(now())
+  atualizadaEm        DateTime       @updatedAt
+
+  imovel  Imovel   @relation(fields: [imovelId], references: [id], onDelete: Cascade)
+  visita  Visita?
+  eventos Evento[]
+
+  @@index([imovelId])
+}
+
+model Visita {
+  id           String       @id @default(cuid())
+  imovelId     String
+  conversaId   String       @unique
+  dataHora     DateTime
+  status       StatusVisita @default(pedida)
+  observacao   String?
+  criadaEm     DateTime     @default(now())
+  atualizadaEm DateTime     @updatedAt
+
+  imovel   Imovel   @relation(fields: [imovelId], references: [id], onDelete: Cascade)
+  conversa Conversa @relation(fields: [conversaId], references: [id], onDelete: Cascade)
+
+  @@index([imovelId, dataHora])
+}
+
+model Evento {
+  id         String     @id @default(cuid())
+  imovelId   String
+  conversaId String?
+  tipo       TipoEvento
+  criadoEm   DateTime   @default(now())
+
+  imovel   Imovel    @relation(fields: [imovelId], references: [id], onDelete: Cascade)
+  conversa Conversa? @relation(fields: [conversaId], references: [id], onDelete: SetNull)
+
+  @@index([imovelId, tipo])
+}

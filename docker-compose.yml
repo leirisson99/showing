@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:16
+    container_name: showing-db
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: showing
+    volumes:
+      - showing-db-data:/var/lib/postgresql/data
+
+volumes:
+  showing-db-data:
