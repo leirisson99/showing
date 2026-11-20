@@ -16,7 +16,7 @@ Tudo o que falta para tirar o Showing dos dados de exemplo (`USAR_MOCKS=1`) e co
 | --- | --- | --- | --- |
 | BK-00 Esquemas do Prisma | P | PRONTO | — |
 | BK-01 Ambiente e banco | P | PARCIAL | BK-00 |
-| BK-02 Login real (A1) | P | PARCIAL | BK-01, BK-07 |
+| BK-02 Login real (A1) | P | PRONTO | BK-01, BK-07 |
 | BK-03 Imóveis, fotos e perfil no Prisma | G | PRONTO | BK-01 |
 | BK-04 Atendimento, conversas e visitas no Prisma | G | PRONTO | BK-01, BK-03 |
 | BK-05 Métricas no Prisma | P | PRONTO | BK-03, BK-04 |
@@ -54,7 +54,7 @@ Schema revisado contra o que as telas e o atendente precisam. Nova migration `20
 
 **Nota:** `src/lib/imoveis.ts` e o painel ainda leem dos mocks mesmo sem `USAR_MOCKS`; a página pública só passa a ler do banco no BK-03. Por isso o critério de pronto aqui é `pnpm env:check` verde nos grupos ligados ao banco.
 
-## BK-02 · Login real (A1) — PARCIAL (2026-11-20)
+## BK-02 · Login real (A1) — PRONTO (2026-11-20)
 
 **Feito:** `USAR_MOCKS` fora do `.env` (comentado), `AUTH_SECRET` definido, e o seed passou a trocar o e-mail do corretor de exemplo por `SEED_CORRETOR_EMAIL` (o corretor do seed é dono do imóvel de exemplo). Verificado em `localhost:3000` sem mocks:
 - `/painel` sem sessão responde 307 para `/login`.
@@ -62,8 +62,9 @@ Schema revisado contra o que as telas e o atendente precisam. Nova migration `20
 
 **Corrigido (laço depois do link):** com sessão JWT o `id` do corretor não ia para a sessão, então `exigirCorretor` não achava o usuário e mandava de volta ao `/login`. `src/auth.ts` ganhou os callbacks `jwt` e `session` que copiam o id. Comprovado com um token de login gerado direto no banco: sem a correção `/painel` manda ao login, com ela renderiza a visão geral.
 
-**Falta (só você consegue):** abrir o e-mail "Seu link de acesso ao Showing", clicar (no mesmo navegador, o link vale 15 min e uma vez) e conferir que cai em `/painel` com o imóvel de exemplo e o botão Sair. O link aponta para `NEXT_PUBLIC_SITE_URL` (`http://localhost:3000`).
-- Em seguida testar o upload de foto pelo painel (BK-06) e uma conversa pela bolha com a IA real, vendo a visita no painel e o e-mail chegando.
+**Confirmado pelo usuário:** o link do e-mail leva ao `/painel` e o login funciona de ponta a ponta (link mágico por Gmail, sessão JWT, `/painel` protegido).
+
+**Próximos testes reais:** upload de foto pelo painel (BK-06) e uma conversa na bolha com a IA real, vendo a visita no painel e os e-mails chegando.
 
 ## BK-03 · Imóveis, fotos e perfil no Prisma — PRONTO (2026-11-20)
 
