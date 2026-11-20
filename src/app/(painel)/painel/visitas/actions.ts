@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { alterarStatusVisita } from "@/lib/painel/atendimentos";
 import type { Resultado } from "@/lib/painel/imoveis";
+import { avisarStatusDaVisita, disparar, notificacoesAtivas } from "@/lib/notificacoes";
 import { exigirCorretor } from "@/lib/session";
 
 const entrada = z.object({
@@ -19,6 +20,8 @@ export async function alterarStatusVisitaAction(visitaId: unknown, status: unkno
 
   const r = await alterarStatusVisita(corretor.id, dados.data.visitaId, dados.data.status);
   if (!r.ok) return r;
+  const { visitaId: id, status: novo } = dados.data;
+  if (notificacoesAtivas() && (novo === "confirmada" || novo === "cancelada")) disparar(() => avisarStatusDaVisita(id, novo));
   revalidatePath("/painel/visitas");
   revalidatePath("/painel/conversas");
   revalidatePath("/painel");

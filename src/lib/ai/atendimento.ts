@@ -14,6 +14,9 @@ export type ContextoAtendimento = {
   agora?: () => Date;
   /** Observador opcional (testes, métricas). Recebe só o nome da ferramenta e o resultado. */
   observador?: (e: { ferramenta: string; resultado: Resultado }) => void;
+  /** Disparos opcionais de e-mail (BK-07). Rodam depois de salvar, sem `await`: falha de envio não afeta o resultado. */
+  aoPedirVisita?: (visitaId: string) => void;
+  aoTransferir?: (conversaId: string, motivo: string) => void;
 };
 
 export type Resultado = { ok: true; [k: string]: unknown } | { ok: false; erro: string };
@@ -153,6 +156,7 @@ export function agendarVisita(ctx: ContextoAtendimento, entrada: unknown) {
           : "Esse horário acabou de ser pedido por outra pessoa. Chame listar_horarios e ofereça outro.",
       );
     }
+    ctx.aoPedirVisita?.(visita.id);
     return { ok: true, visita_id: visita.id, status: "pedida", horario: escolhido.rotulo };
   });
 }
@@ -168,6 +172,7 @@ export function transferirCorretor(ctx: ContextoAtendimento, entrada: unknown) {
     if (!conversa) return erro("Conversa não encontrada.");
 
     await ctx.repo.marcarTransferida(ctx.conversaId, dados.data.motivo);
+    ctx.aoTransferir?.(ctx.conversaId, dados.data.motivo);
     return { ok: true };
   });
 }

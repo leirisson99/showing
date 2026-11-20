@@ -6,6 +6,7 @@ import type { Resultado } from "@/lib/ai/atendimento";
 import { LIMITE_MENSAGENS_COMPRADOR, LIMITE_POR_MINUTO } from "@/lib/ai/limites";
 import { BOTOES_CONSENTIMENTO } from "@/lib/ai/saudacao";
 import { iaConfigurada } from "@/lib/ai/modelo";
+import { avisarTransferencia, avisarVisitaPedida, disparar, notificacoesAtivas } from "@/lib/notificacoes";
 import { obterRepositorio } from "@/lib/ai/repositorio-atual";
 import { buscarImovelPublicoPorId } from "@/lib/imoveis";
 import { registrarEvento } from "@/lib/painel/metricas";
@@ -133,6 +134,12 @@ export async function POST(request: Request) {
             imovelId: imovel.id,
             conversaId: idDaConversa,
             repo,
+            ...(notificacoesAtivas()
+              ? {
+                  aoPedirVisita: (id: string) => disparar(() => avisarVisitaPedida(id)),
+                  aoTransferir: (id: string, motivo: string) => disparar(() => avisarTransferencia(id, motivo)),
+                }
+              : {}),
             observador: ({ ferramenta, resultado }: { ferramenta: string; resultado: Resultado }) => {
               if (!resultado.ok) return;
               if (ferramenta === "registrar_lead") void registrarEvento("contato_capturado", imovel.id, idDaConversa);

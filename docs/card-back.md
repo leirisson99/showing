@@ -21,7 +21,7 @@ Tudo o que falta para tirar o Showing dos dados de exemplo (`USAR_MOCKS=1`) e co
 | BK-04 Atendimento, conversas e visitas no Prisma | G | PRONTO | BK-01, BK-03 |
 | BK-05 Métricas no Prisma | P | PRONTO | BK-03, BK-04 |
 | BK-06 Fotos no Appwrite | M | PARCIAL | BK-03 |
-| BK-07 E-mails de visita e transferência (C5) | M | A FAZER | BK-04 |
+| BK-07 E-mails de visita e transferência (C5) | M | PRONTO | BK-04 |
 | BK-08 Privacidade e LGPD no backend | M | A FAZER | BK-04 |
 | BK-09 Atendente em produção (modelo e custo) | M | A FAZER | BK-04 |
 | BK-10 Deploy e qualidade (E3) | M | A FAZER | todos |
@@ -96,33 +96,16 @@ Sem `USAR_MOCKS=1`, o atendente e o painel de conversas, visitas e clientes usam
 - O servidor é 1.8.0 e o SDK `node-appwrite@32.0.0` é feito para 2.7.2: avisa no log, mas funcionou; se aparecer incompatibilidade, baixar o SDK para a versão da 1.8.
 - Reiniciar o `pnpm dev` depois de mudar o `.env`, porque o `next.config.ts` lê o endpoint ao subir.
 
-## BK-07 · E-mails de visita e transferência (C5) — M
+## BK-07 · E-mails de visita e transferência (C5) — PRONTO (2026-11-20)
 
-**Como funciona (decidido em 2026-11-20):** Nodemailer com Gmail (senha de app), em e-mails transacionais disparados por *hooks opcionais*, sem acoplar a regra de negócio ao envio.
-
-**Adaptações ao projeto** (o modelo original era de outra base de código):
-- **Só três variáveis:** `EMAIL_USER` (conta Gmail), `EMAIL_APP_PASSWORD` (senha de app: Conta Google → Segurança → Verificação em duas etapas → Senhas de app; nunca a senha normal) e `EMAIL_FROM_NAME` (nome do remetente). Substituem `SMTP_*` e `EMAIL_FROM`. `src/lib/email.ts` usa `nodemailer.createTransport({ service: "gmail" })` e exporta `emailConfigurado()`. Só no `.env`, que está no `.gitignore`.
-- **Sem camada `IEmailService`:** `enviarEmail({ para, assunto, template })` já é o único ponto de envio, então trocar o Gmail por outro provedor é mexer só em `criarTransporte()`. Não criar interface nem injeção de dependência (CLAUDE.md: sem abstração na POC).
-- **Templates em React Email** (`src/emails/`, padrão do `link-de-acesso.tsx`), no lugar de `buildHtml` à mão: já geram layout em tabelas com estilos inline e escapam o conteúdo dinâmico. Preço com `Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" })` (já em `src/lib/format.ts`).
-
-**Eventos e textos** (mapa `{ assunto, título, texto }` por evento; evento sem configuração é ignorado):
-| Evento | Para | Conteúdo |
-| --- | --- | --- |
-| Visita pedida | corretor | imóvel, data e hora, nome e contato do comprador, dúvidas pendentes, link para `/painel/visitas` |
-| Conversa transferida | corretor | motivo, imóvel, link para a conversa |
-| Pedido recebido | comprador (se deixou e-mail e autorizou) | imóvel, data e hora, "o corretor vai confirmar com você" |
-| Visita confirmada / cancelada | comprador (se tem e-mail) | imóvel, data e hora, contato do corretor |
-
-**Disparo:**
-- `agendar_visita`, `transferir_corretor` e as ações de visita do painel recebem um **callback opcional** (`aoPedirVisita`, `aoTransferir`, `aoMudarStatusDaVisita`). Depois de persistir, chamam sem `await`: `callback(dados).catch((e) => console.error("falha ao enviar e-mail", e.name))`. **A visita é salva antes do e-mail; falha de envio nunca quebra nem desfaz a operação.**
-- O log leva só o tipo do erro, nunca endereço, nome ou texto da mensagem (LGPD).
-- Ligação em um único ponto (ex.: `src/lib/notificacoes.ts`): `emailConfigurado()` (`EMAIL_USER` e `EMAIL_APP_PASSWORD`); se faltar variável o callback fica `undefined` e o sistema roda sem enviar (dev, CI e `USAR_MOCKS`).
-- Reenvio em caso de falha (RNF-20): fora do primeiro corte; começar com a tentativa única registrada em log.
-- Gmail limita cerca de 500 envios por dia em conta pessoal: suficiente para o piloto de 3 corretores.
-
-**Teste isolado:** `scripts/test-email.ts` renderiza cada template e envia ao seu próprio e-mail, rodado com `pnpm tsx scripts/test-email.ts`. Conferir também a caixa de spam antes de ligar aos fluxos.
-
-**Pronto quando:** um pedido de visita pela bolha chega por e-mail ao corretor com contato, horário e dúvidas pendentes; testes de renderização (`render()` contém os campos) passam; derrubar o SMTP não impede a visita de ser salva.
+Nodemailer com Gmail (senha de app), só com `EMAIL_USER`, `EMAIL_APP_PASSWORD` e `EMAIL_FROM_NAME`. Sem camada `IEmailService`: `enviarEmail()` em `src/lib/email.ts` é o único ponto de envio (trocar de provedor = mexer só em `criarTransporte()`).
+- **Templates** (`src/emails/`, React Email, layout comum em `Moldura.tsx`; o React escapa o texto dinâmico): `visita-pedida` (corretor), `conversa-transferida` (corretor), `pedido-recebido` (comprador) e `visita-atualizada` (comprador: confirmada ou cancelada).
+- **Quem recebe o quê** (`src/lib/notificacoes.ts`): visita pedida → corretor, e comprador se deixou e-mail; transferência → corretor, com o motivo; confirmar ou cancelar no painel → comprador, se tem e-mail. O contato só entra se houve consentimento (RN-11).
+- **Disparo:** `agendar_visita` e `transferir_corretor` chamam ganchos opcionais (`aoPedirVisita`, `aoTransferir`) **depois de salvar**, sem `await`; a ação de status do painel faz o mesmo. Falha de envio nunca desfaz nem quebra a operação, e o log leva só o tipo do erro.
+- **Liga e desliga:** `notificacoesAtivas()` = e-mail configurado e fora do `USAR_MOCKS`. Sem as variáveis o sistema roda sem enviar.
+- **Testes:** `notificacoes.test.ts` (8): renderização e escape de HTML, ganchos chamados só no sucesso, falha de envio sem quebrar a visita nem vazar e-mail no log, e envio com dados do Postgres (destinatários, fuso de São Paulo, sem consentimento = sem contato). 137 testes, `typecheck`, `lint` e `build` passam.
+- **Teste real:** `pnpm tsx scripts/test-email.ts <seu-email>` envia os 4 e-mails de exemplo; os 4 saíram para a caixa de teste em 2026-11-20.
+- **Limites:** envio único, sem reenvio automático (RNF-20); o Gmail limita cerca de 500 por dia, suficiente para o piloto. Em hospedagem serverless o envio sem `await` pode ser cortado quando a resposta termina: se for o caso, trocar `disparar()` por `after()` do Next.
 
 ## BK-08 · Privacidade e LGPD no backend — M
 
