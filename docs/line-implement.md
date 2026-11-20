@@ -4,6 +4,8 @@ Acompanhamento de execução dos cards de [cards.md](cards.md). Este arquivo reg
 
 **Estado em 2026-11-19.** Só a base do projeto existe: nenhuma página, rota de API, tela ou teste foi construído ainda. A única página em `src/app` é a inicial.
 
+**Backend:** tudo o que falta para ligar ao Prisma, SMTP, Appwrite e deploy está em [card-back.md](card-back.md). Aqui ficam o status e as observações da interface; as frases "Para ligar ao backend" e "Falta: ligar ao Prisma" abaixo são cobertas por BK-03 a BK-05.
+
 **Legenda:** `PRONTO` · `PARCIAL` · `A FAZER` · `EM ANDAMENTO` · `BLOQUEADO`
 **Tamanho:** P (até meio dia) · M (1 dia) · G (2+ dias)
 
@@ -70,7 +72,7 @@ Acompanhamento de execução dos cards de [cards.md](cards.md). Este arquivo reg
 | C2 Ferramentas do atendente | G | PARCIAL | Regras em `src/lib/ai/atendimento.ts`, tools do Strands em `tools.ts`, cálculo de horários em `horarios.ts` (fuso -03:00, 12 h a 14 dias, conflito por duração). Tudo validado com Zod, conferindo imóvel publicado e igual ao da conversa. Roda sobre o repositório em memória `src/mocks/atendimento.ts`, atrás da interface `RepositorioAtendimento`. **Para ligar ao backend:** implementar essa interface com Prisma (card C3); o envio dos e-mails de `agendar_visita` entra no C5; o conflito de horário precisa de proteção no banco contra duas visitas simultâneas. |
 | C3 Rota `/api/chat` com streaming | G | PARCIAL | **Implementada com OpenRouter** (2026-11-20), testada com um modelo falso (12 testes). `POST /api/chat` valida o corpo com Zod, devolve NDJSON (`inicio`, `texto`, `fim`, `erro`), cria um agente novo por requisição com o histórico da conversa e guarda o histórico completo (inclui chamadas de ferramenta). Modelo em `src/lib/ai/modelo.ts` (`OpenAIModel` apontando para o OpenRouter; `AI_API_KEY`, `AI_MODEL`, `AI_BASE_URL` opcional). Limites: 30 mensagens do comprador por conversa (RN-16) e 20 por minuto por IP e por conversa (RNF-10, em memória, vale para uma instância). Só atende imóvel publicado; conversa de outro imóvel dá 404. Logs só com o id da conversa e o tipo do erro. Sem IA configurada devolve 503 e a bolha usa o atendente simulado. Dependência nova: `openai@6.49.0` (exigida pelo `OpenAIModel`; o SDK pede `^6.45`). **Testada com o modelo real** (2026-11-20): respondeu com dados da ficha, listou horários e devolveu os botões. **Falta:** trocar o repositório em memória por Prisma (`src/lib/ai/repositorio-atual.ts`); escolher o modelo e acompanhar o custo; duas mensagens simultâneas na mesma conversa podem sobrescrever o histórico. |
 | C4 Bolha de chat | G | PARCIAL | **Bolha pronta com atendente simulado** (2026-11-20), em `src/components/chat-bubble/`. Carregada com `next/dynamic` (`ssr: false`) em tempo ocioso ou no primeiro clique, fora do HTML inicial. Celular em tela cheia, desktop no canto inferior direito. Botão real com `aria-label`, foco vai para o campo ao abrir e volta ao botão ao fechar, foco preso dentro da bolha, fecha com Esc, alvos de 44 px. Id e histórico no `localStorage` dentro de `try/catch`. Sugestões rápidas, indicador de digitação, resposta em streaming simulado, botões de consentimento e link da política de privacidade. "Agendar visita" abre direto no agendamento (contrato: evento `showing:abrir-chat`). A conversa é guiada por `mock-atendente.ts` (regras, sem IA), com 11 testes das regras do atendente. **Para ligar ao backend (C3):** trocar `responder()` por `fetch('/api/chat')` com streaming, mapear tools para `sugestoes`/`pedeConsentimento` e guardar só o id da conversa no `localStorage`. **Falta:** limite de 30 mensagens (RN-16) e eventos de métricas; telas não conferidas em navegador; o aviso de privacidade aponta para `/privacidade`, que ainda não existe. |
-| C5 E-mails de visita e transferência | M | A FAZER | A visita é salva antes do e-mail; falha de envio não pode perder a visita. Resolve a pendência do pacote React Email. |
+| C5 E-mails de visita e transferência | M | MOVIDO | Backend: ver BK-07 em [card-back.md](card-back.md). |
 | C6 Casos de teste do atendente | M | PARCIAL | `pnpm test ai`: testes de horários, regras de RN-11 a RN-20, imóvel e argumentos inválidos, prompt, descrição e rota. **Os 7 casos contra o modelo real foram executados em 2026-11-20 com o modelo configurado no `.env` e passaram** (na primeira rodada 6 de 7: o caso do horário inventado estourou os 600 tokens por chamada; o limite subiu para 1500 e o caso passou). Rodam sempre que `AI_API_KEY` e `AI_MODEL` existem, ou seja, `pnpm test` agora também chama a API (cerca de 1 minuto e alguns tokens). Os modelos variam: repetir antes de cada mudança no prompt. |
 
 ## Fase D — Acompanhamento do corretor
@@ -87,7 +89,7 @@ Acompanhamento de execução dos cards de [cards.md](cards.md). Este arquivo reg
 | --- | --- | --- | --- |
 | E1 SEO da página | M | PARCIAL | **Feito** (2026-11-20): JSON-LD `RealEstateListing` com `Offer` e `Place` (endereço e coordenadas só com `mostrarEndereco`, RN-05; escape seguro), `sitemap.ts` (só publicados), `robots.ts` (bloqueia painel, login e API) e `llms.txt`; vendido segue com `noindex`. 5 testes. **Falta:** medir Lighthouse; slug inexistente ainda responde 200 com `noindex` (streaming com Cache Components). |
 | E2 Privacidade e LGPD | M | PARCIAL | `/privacidade` criada em linguagem simples (dados coletados, finalidade, quem vê, direitos, exclusão), linkada do rodapé, da home e da bolha; contato por `NEXT_PUBLIC_EMAIL_PRIVACIDADE` (sem ele, manda falar com o corretor). **Falta:** definir o prazo de guarda, revisão por uma pessoa de confiança antes do piloto (RNF-14) e a exclusão a pedido no backend (RN-24). |
-| E3 Qualidade e deploy | M | A FAZER | Fixar versões das dependências, em especial `@strands-agents/sdk`. Acompanhar o custo do modelo toda semana. |
+| E3 Qualidade e deploy | M | MOVIDO | Backend: ver BK-10 em [card-back.md](card-back.md). |
 
 ---
 
@@ -104,6 +106,7 @@ Acompanhamento de execução dos cards de [cards.md](cards.md). Este arquivo reg
 
 | Data | Mudança |
 | --- | --- |
+| 2026-11-20 | Cards do backend movidos para `card-back.md` (BK-01 a BK-10); C5 e E3 passam para lá. |
 | 2026-11-19 | Arquivo criado a partir de `cards.md`. Nenhum card novo concluído desde a base. |
 | 2026-11-19 | A1 implementado (PARCIAL): falta testar o fluxo completo com banco e SMTP configurados. |
 | 2026-11-20 | A2 implementado com mocks (PARCIAL): `/painel/perfil`, horários do perfil alimentam o atendente, perfil real na página pública, publicar exige perfil completo. Bolha de chat: ao chegar a 30 mensagens do comprador (ou aviso do servidor) o campo some, aparece o aviso com o link do WhatsApp do corretor (se houver) e o foco vai para ele; lógica em `limite.ts`, 4 testes. `typecheck`, `lint`, `build` e 96 testes passam. Não conferido em navegador. |
