@@ -11,6 +11,7 @@
     "test": "vitest run --passWithNoTests",
     "test:e2e": "playwright test",
     "test:e2e:capturas": "playwright test capturas",
+    "env:check": "tsx scripts/verificar-ambiente.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {

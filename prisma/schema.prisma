@@ -65,6 +65,7 @@ model User {
   accounts Account[]
   sessions Session[]
   imoveis  Imovel[]
+  visitas  Visita[]
 }
 
 model Account {
@@ -129,6 +130,8 @@ model Imovel {
   aceitaFgts          Boolean?
   caracteristicas     String[]
   infoAdicional       String?
+  // Escolas, mercados, saúde e distância do centro: { escolas, mercados, saude, distanciaCentro }.
+  infoBairro          Json?
   status              StatusImovel @default(rascunho)
   publicadoEm         DateTime?
   criadoEm            DateTime     @default(now())
@@ -165,6 +168,10 @@ model Conversa {
   consentimentoEm     DateTime?
   transferida         Boolean        @default(false)
   motivoTransferencia String?
+  // Quando o corretor marcou a transferência como lida (painel).
+  lidaEm              DateTime?
+  // Controle de concorrência: salvarMensagens só grava se a versão não mudou.
+  versao              Int            @default(0)
   status              StatusConversa @default(ativa)
   criadaEm            DateTime       @default(now())
   atualizadaEm        DateTime       @updatedAt
@@ -174,12 +181,16 @@ model Conversa {
   eventos Evento[]
 
   @@index([imovelId])
+  @@index([imovelId, transferida])
 }
 
 model Visita {
   id           String       @id @default(cuid())
   imovelId     String
   conversaId   String       @unique
+  // Cópia de Imovel.corretorId: permite filtrar por dono (RN-23) e impedir dois pedidos
+  // no mesmo horário do mesmo corretor (índice único parcial, ver migration).
+  corretorId   String
   dataHora     DateTime
   status       StatusVisita @default(pedida)
   observacao   String?
@@ -188,8 +199,10 @@ model Visita {
 
   imovel   Imovel   @relation(fields: [imovelId], references: [id], onDelete: Cascade)
   conversa Conversa @relation(fields: [conversaId], references: [id], onDelete: Cascade)
+  corretor User     @relation(fields: [corretorId], references: [id])
 
   @@index([imovelId, dataHora])
+  @@index([corretorId, dataHora])
 }
 
 model Evento {
@@ -203,4 +216,5 @@ model Evento {
   conversa Conversa? @relation(fields: [conversaId], references: [id], onDelete: SetNull)
 
   @@index([imovelId, tipo])
+  @@index([imovelId, criadoEm])
 }
