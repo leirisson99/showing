@@ -9,6 +9,10 @@ const db = new PrismaClient({
 async function main() {
   // Só e-mail cadastrado entra no painel: use SEED_CORRETOR_EMAIL para entrar com um e-mail seu.
   const email = process.env.SEED_CORRETOR_EMAIL?.trim() || "corretor@exemplo.com";
+  // Se o corretor de exemplo já existe com o e-mail padrão, passa a usar o e-mail informado.
+  if (email !== "corretor@exemplo.com") {
+    await db.user.updateMany({ where: { email: "corretor@exemplo.com" }, data: { email } }).catch(() => {});
+  }
   const corretor = await db.user.upsert({
     where: { email },
     update: {},

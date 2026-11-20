@@ -16,7 +16,7 @@ Tudo o que falta para tirar o Showing dos dados de exemplo (`USAR_MOCKS=1`) e co
 | --- | --- | --- | --- |
 | BK-00 Esquemas do Prisma | P | PRONTO | — |
 | BK-01 Ambiente e banco | P | PARCIAL | BK-00 |
-| BK-02 Login real (A1) | P | A FAZER | BK-01, BK-07 |
+| BK-02 Login real (A1) | P | PARCIAL | BK-01, BK-07 |
 | BK-03 Imóveis, fotos e perfil no Prisma | G | PRONTO | BK-01 |
 | BK-04 Atendimento, conversas e visitas no Prisma | G | PRONTO | BK-01, BK-03 |
 | BK-05 Métricas no Prisma | P | PRONTO | BK-03, BK-04 |
@@ -54,12 +54,14 @@ Schema revisado contra o que as telas e o atendente precisam. Nova migration `20
 
 **Nota:** `src/lib/imoveis.ts` e o painel ainda leem dos mocks mesmo sem `USAR_MOCKS`; a página pública só passa a ler do banco no BK-03. Por isso o critério de pronto aqui é `pnpm env:check` verde nos grupos ligados ao banco.
 
-## BK-02 · Login real (A1) — P
+## BK-02 · Login real (A1) — PARCIAL (2026-11-20)
 
-Código já feito (Auth.js, provider de e-mail, `proxy.ts`, `/login`, `/login/verificar`, `exigirCorretor()`). **Falta o teste ponta a ponta:** pedir o link, receber o e-mail, entrar, sair.
-- Só e-mail de corretor já cadastrado entra; a resposta é igual para e-mail desconhecido.
-- `enviarLink` já captura falha de envio; conferir a mensagem mostrada ao usuário.
-- **Pronto quando:** o fluxo completo funciona com banco e e-mail reais e `/painel` sem sessão redireciona para `/login`.
+**Feito:** `USAR_MOCKS` fora do `.env` (comentado), `AUTH_SECRET` definido, e o seed passou a trocar o e-mail do corretor de exemplo por `SEED_CORRETOR_EMAIL` (o corretor do seed é dono do imóvel de exemplo). Verificado em `localhost:3000` sem mocks:
+- `/painel` sem sessão responde 307 para `/login`.
+- Pedir o link no formulário grava o token em `VerificationToken`, chama o Gmail sem erro e leva a `/login/verificar` ("Veja seu e-mail", reenvio em 60 s), sem erro de console. E-mail desconhecido recebe a mesma resposta.
+
+**Falta (só você consegue):** abrir o e-mail "Seu link de acesso ao Showing", clicar (no mesmo navegador, o link vale 15 min e uma vez) e conferir que cai em `/painel` com o imóvel de exemplo e o botão Sair. O link aponta para `NEXT_PUBLIC_SITE_URL` (`http://localhost:3000`).
+- Em seguida testar o upload de foto pelo painel (BK-06) e uma conversa pela bolha com a IA real, vendo a visita no painel e o e-mail chegando.
 
 ## BK-03 · Imóveis, fotos e perfil no Prisma — PRONTO (2026-11-20)
 
