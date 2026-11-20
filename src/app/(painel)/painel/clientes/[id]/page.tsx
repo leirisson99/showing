@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Mail, Phone } from "lucide-react";
 import { BadgeVisita } from "@/components/painel/BadgeVisita";
+import { CabecalhoPagina } from "@/components/painel/CabecalhoPagina";
 import { formatarDataHora, formatarTelefone } from "@/lib/format";
 import { buscarCliente, buscarConversaDoCorretor } from "@/lib/painel/atendimentos";
 import { exigirCorretor } from "@/lib/session";
@@ -28,15 +29,14 @@ export default async function ClientePage({ params }: PageProps<"/painel/cliente
         <ArrowLeft className="size-4" aria-hidden /> Voltar para os clientes
       </Link>
 
-      <div>
-        <h1 className="text-[26px] font-bold lg:text-[32px]">{cliente.nome}</h1>
-        <p className="text-muted-foreground">
-          Primeiro contato em {formatarDataHora(cliente.primeiraConversaEm)} · última atividade em {formatarDataHora(cliente.ultimaAtividade)}
-        </p>
-      </div>
+      <CabecalhoPagina
+        rotulo="Cliente"
+        titulo={cliente.nome}
+        descricao={`Primeiro contato em ${formatarDataHora(cliente.primeiraConversaEm)} · última atividade em ${formatarDataHora(cliente.ultimaAtividade)}`}
+      />
 
-      <section aria-labelledby="contato" className="flex flex-col gap-3 rounded-xl border bg-card p-4">
-        <h2 id="contato" className="text-lg font-semibold">Contato e perfil</h2>
+      <section aria-labelledby="contato" className="flex flex-col gap-3 rounded-3xl bg-card p-5 ring-1 ring-foreground/10">
+        <h2 id="contato" className="text-xl font-medium">Contato e perfil</h2>
         <dl className="grid gap-x-6 gap-y-2 text-[15px] sm:grid-cols-2">
           {cliente.telefone && (
             <div>
@@ -70,13 +70,13 @@ export default async function ClientePage({ params }: PageProps<"/painel/cliente
       </section>
 
       <section aria-labelledby="visitas" className="flex flex-col gap-3">
-        <h2 id="visitas" className="text-lg font-semibold">Visitas</h2>
+        <h2 id="visitas" className="text-xl font-medium">Visitas</h2>
         {visitas.length === 0 ? (
           <p className="text-muted-foreground">Este cliente ainda não pediu visita.</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {visitas.map((v) => (
-              <li key={v.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-card p-3">
+              <li key={v.id} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-card p-4 ring-1 ring-foreground/10">
                 <span><strong>{formatarDataHora(v.dataHora)}</strong> · {v.imovelTitulo}</span>
                 <span className="flex items-center gap-3">
                   <BadgeVisita status={v.status} />
@@ -89,11 +89,11 @@ export default async function ClientePage({ params }: PageProps<"/painel/cliente
       </section>
 
       <section aria-labelledby="conversas" className="flex flex-col gap-3">
-        <h2 id="conversas" className="text-lg font-semibold">Conversas</h2>
+        <h2 id="conversas" className="text-xl font-medium">Conversas</h2>
         <ul className="flex flex-col gap-2">
           {conversas.map((c) => (
             <li key={c.id}>
-              <Link href={`/painel/conversas/${c.id}`} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-card p-3 transition-colors hover:bg-muted">
+              <Link href={`/painel/conversas/${c.id}`} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-card p-4 ring-1 ring-foreground/10 transition-colors hover:bg-muted">
                 <span>{formatarDataHora(c.atualizadaEm)} · {c.imovelTitulo}</span>
                 <span className="text-sm text-muted-foreground">
                   {c.totalMensagens} {c.totalMensagens === 1 ? "mensagem" : "mensagens"}

@@ -4,9 +4,11 @@ import { z } from "zod";
 import { criarAtendente } from "@/lib/ai/atendente";
 import type { Resultado } from "@/lib/ai/atendimento";
 import { LIMITE_MENSAGENS_COMPRADOR, LIMITE_POR_MINUTO } from "@/lib/ai/limites";
+import { BOTOES_CONSENTIMENTO } from "@/lib/ai/saudacao";
 import { iaConfigurada } from "@/lib/ai/modelo";
 import { obterRepositorio } from "@/lib/ai/repositorio-atual";
 import { buscarImovelPublicoPorId } from "@/lib/imoveis";
+import { registrarEvento } from "@/lib/painel/metricas";
 import { dentroDoLimite } from "@/lib/rate-limit";
 
 // Atendente de IA com streaming (card C3). Um agente novo por requisição, com o histórico
@@ -35,6 +37,37 @@ function ipDe(request: Request): string {
 /** Mensagens do comprador: turnos de usuário que têm texto (resultados de ferramenta não contam). */
 function contarMensagensDoComprador(mensagens: MessageData[]): number {
   return mensagens.filter((m) => m.role === "user" && m.content.some((c) => "text" in c)).length;
+}
+
+const consulta = z.object({ imovelId: z.string().min(1).max(100), conversaId: z.uuid() });
+
+// Retomar a conversa (RF-17): devolve só o texto das mensagens, sem chamadas de ferramenta.
+// O navegador guarda apenas o id da conversa; o histórico vive no servidor. O id é difícil de
+// adivinhar e só vale para o imóvel em que a conversa começou.
+export async function GET(request: Request) {
+  const params = new URL(request.url).searchParams;
+  const entrada = consulta.safeParse({ imovelId: params.get("imovelId"), conversaId: params.get("conversaId") });
+  if (!entrada.success) return erro("pedido_invalido", 400);
+
+  if (!dentroDoLimite(`ip:${ipDe(request)}`, LIMITE_POR_MINUTO, UM_MINUTO)) return erro("muitas_mensagens", 429);
+
+  const repo = obterRepositorio();
+  const conversa = await repo.buscarConversa(entrada.data.conversaId);
+  if (!conversa || conversa.imovelId !== entrada.data.imovelId) return erro("conversa_nao_encontrada", 404);
+
+  const historico = await repo.mensagensDaConversa(conversa.id);
+  const mensagens = historico.flatMap((m) => {
+    const texto = m.content
+      .map((c) => ("text" in c && typeof c.text === "string" ? c.text : ""))
+      .join(" ")
+      .trim();
+    return texto ? [{ papel: m.role === "user" ? ("usuario" as const) : ("assistente" as const), texto }] : [];
+  });
+
+  return NextResponse.json(
+    { mensagens, encerrada: contarMensagensDoComprador(historico) >= LIMITE_MENSAGENS_COMPRADOR },
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }
 
 export async function POST(request: Request) {
@@ -75,6 +108,7 @@ export async function POST(request: Request) {
       request.signal.addEventListener("abort", () => (aberto = false));
 
       enviar({ tipo: "inicio", conversaId: idDaConversa });
+      void registrarEvento("chat_mensagem", imovel.id, idDaConversa);
 
       // RN-16: ao atingir o limite, oferece o contato do corretor e encerra.
       if (contarMensagensDoComprador(historico) >= LIMITE_MENSAGENS_COMPRADOR) {
@@ -88,6 +122,7 @@ export async function POST(request: Request) {
       }
 
       let sugestoes: string[] | undefined;
+      let visita: { horario: string } | undefined;
       let texto = "";
 
       try {
@@ -100,11 +135,17 @@ export async function POST(request: Request) {
             repo,
             observador: ({ ferramenta, resultado }: { ferramenta: string; resultado: Resultado }) => {
               if (!resultado.ok) return;
+              if (ferramenta === "registrar_lead") void registrarEvento("contato_capturado", imovel.id, idDaConversa);
+              if (ferramenta === "transferir_corretor") void registrarEvento("transferencia", imovel.id, idDaConversa);
               if (ferramenta === "listar_horarios") {
                 const horarios = (resultado.horarios as { rotulo: string }[] | undefined) ?? [];
                 sugestoes = horarios.map((h) => h.rotulo);
               }
-              if (ferramenta === "agendar_visita") sugestoes = undefined;
+              if (ferramenta === "agendar_visita") {
+                sugestoes = undefined;
+                void registrarEvento("visita_pedida", imovel.id, idDaConversa);
+                if (typeof resultado.horario === "string") visita = { horario: resultado.horario };
+              }
             },
           },
         });
@@ -127,7 +168,8 @@ export async function POST(request: Request) {
         const pedeConsentimento = !conversa?.consentimento && PEDE_CONSENTIMENTO.test(texto);
         enviar({
           tipo: "fim",
-          ...(pedeConsentimento ? { pedeConsentimento: true, sugestoes: ["Autorizo", "Não autorizo"] } : sugestoes ? { sugestoes } : {}),
+          ...(pedeConsentimento ? { pedeConsentimento: true, sugestoes: BOTOES_CONSENTIMENTO } : sugestoes ? { sugestoes } : {}),
+          ...(visita ? { visita } : {}),
         });
       } catch (e) {
         console.error("chat: falha ao responder", { conversaId: idDaConversa, tipo: e instanceof Error ? e.name : "desconhecido" });

@@ -3,7 +3,7 @@
 export type EventoChat =
   | { tipo: "inicio"; conversaId: string }
   | { tipo: "texto"; texto: string }
-  | { tipo: "fim"; sugestoes?: string[]; pedeConsentimento?: boolean; encerrada?: boolean }
+  | { tipo: "fim"; sugestoes?: string[]; pedeConsentimento?: boolean; encerrada?: boolean; visita?: { horario: string } }
   | { tipo: "erro"; texto: string };
 
 export class ErroApi extends Error {
@@ -47,4 +47,20 @@ export async function* conversarComApi({ imovelId, conversaId, mensagem, signal 
       }
     }
   }
+}
+
+export type HistoricoDaConversa = {
+  mensagens: { papel: "usuario" | "assistente"; texto: string }[];
+  encerrada: boolean;
+};
+
+/** Histórico de uma conversa já iniciada (RF-17): só texto, vindo do servidor. */
+export async function carregarConversa(imovelId: string, conversaId: string): Promise<HistoricoDaConversa> {
+  const url = `/api/chat?${new URLSearchParams({ imovelId, conversaId })}`;
+  const resposta = await fetch(url, { cache: "no-store" });
+  if (!resposta.ok) {
+    const corpo = await resposta.json().catch(() => null);
+    throw new ErroApi(typeof corpo?.erro === "string" ? corpo.erro : "erro_desconhecido", resposta.status);
+  }
+  return (await resposta.json()) as HistoricoDaConversa;
 }

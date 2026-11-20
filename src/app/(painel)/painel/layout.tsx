@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/button";
 import { EsqueletoPagina } from "@/components/painel/Esqueletos";
-import { NavPainel } from "@/components/painel/NavPainel";
+import { NavPainelComContador } from "@/components/painel/NavPainelComContador";
 import { exigirCorretor } from "@/lib/session";
 import { sair } from "./actions";
 
@@ -18,7 +18,7 @@ export default function PainelLayout({ children }: LayoutProps<"/painel">) {
           {/* No celular o menu desce para uma segunda linha e rola na horizontal. */}
           <div className="order-3 w-full min-w-0 md:order-2 md:w-auto md:flex-1">
             <Suspense fallback={null}>
-              <NavPainel />
+              <NavPainelComContador />
             </Suspense>
           </div>
           <form action={sair} className="order-2 md:order-3">

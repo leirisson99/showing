@@ -24,6 +24,8 @@ export const imovelSchema = z.object({
   cidade: z.string().trim().min(2, "Informe a cidade").max(80),
   endereco: z.string().trim().max(200).nullable(),
   mostrarEndereco: z.boolean(),
+  latitude: z.number({ error: "Informe um número" }).min(-90, "Entre -90 e 90").max(90, "Entre -90 e 90").nullable(),
+  longitude: z.number({ error: "Informe um número" }).min(-180, "Entre -180 e 180").max(180, "Entre -180 e 180").nullable(),
   preco: numero("Informe o preço").positive("O preço deve ser maior que zero"),
   condominio: numero("Informe um número").min(0, "Não pode ser negativo").nullable(),
   iptu: numero("Informe um número").min(0, "Não pode ser negativo").nullable(),
@@ -39,6 +41,10 @@ export const imovelSchema = z.object({
 });
 
 export type DadosImovel = z.infer<typeof imovelSchema>;
+
+/** Primeiro passo do cadastro: tudo, menos o texto e as características. */
+export const etapaDadosSchema = imovelSchema.omit({ titulo: true, descricao: true, caracteristicas: true, infoAdicional: true });
+export type DadosIniciais = z.infer<typeof etapaDadosSchema>;
 
 export const CARACTERISTICAS_COMUNS = [
   "Sacada com churrasqueira",

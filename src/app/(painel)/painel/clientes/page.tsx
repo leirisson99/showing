@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { CabecalhoPagina } from "@/components/painel/CabecalhoPagina";
 import { ListaClientes, type ItemCliente } from "@/components/painel/ListaClientes";
 import { formatarDataHora, formatarTelefone } from "@/lib/format";
 import { listarClientes, type ClientePainel } from "@/lib/painel/atendimentos";
@@ -35,12 +36,11 @@ export default async function ClientesPage() {
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-4 py-8">
-      <div>
-        <h1 className="text-[26px] font-bold lg:text-[32px]">Clientes</h1>
-        <p className="mt-1 text-muted-foreground">
-          Compradores que deixaram nome e contato e autorizaram guardar os dados. Só você vê esta lista.
-        </p>
-      </div>
+      <CabecalhoPagina
+        rotulo="Compradores"
+        titulo="Clientes"
+        descricao="Compradores que deixaram nome e contato e autorizaram guardar os dados. Só você vê esta lista."
+      />
       <ListaClientes itens={itens} />
     </main>
   );

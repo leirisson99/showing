@@ -4,219 +4,90 @@ import { Dialog } from "@base-ui/react/dialog";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MessageCircle, Send, X } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { calcularHorariosLivres } from "@/lib/ai/horarios";
+import { registrarEventoUmaVez } from "@/lib/eventos-cliente";
 import { cn } from "@/lib/utils";
+import { CartaoVisita } from "./CartaoVisita";
 import { EVENTO_ABRIR_CHAT, EVENTO_CHAT_PRONTO, type ModoChat } from "./eventos";
-import { conversaEncerrada } from "./limite";
-import { conversarComApi, ErroApi } from "./transporte";
-import {
-  ESTADO_INICIAL,
-  responder,
-  saudacao,
-  type ContextoMock,
-  type Estado,
-  type Resposta,
-} from "./mock-atendente";
-
-export type Mensagem = Resposta & { id: string; papel: "usuario" | "assistente" };
+import type { ContextoMock } from "./mock-atendente";
+import { useConversa } from "./use-conversa";
 
 type Props = {
   imovelId: string;
+  tituloImovel: string;
   corretor: string;
   imovel: ContextoMock["imovel"];
   /** Só dígitos, com DDI. Mostrado quando a conversa chega ao limite de mensagens. */
   whatsapp?: string | null;
+  fotoSrc?: string | null;
+  semMetricas?: boolean;
 };
 
-type Salvo = { mensagens: Mensagem[]; estado: Estado; conversaId?: string | null; encerrada?: boolean };
+const CHAVE_BALAO = "showing:balao-visto";
+const ESPERA_DO_BALAO_MS = 8000;
+const MAXIMO_DE_HORARIOS = 4;
 
-const chave = (imovelId: string) => `showing:conversa:${imovelId}`;
+const iniciais = (nome: string) =>
+  nome
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0])
+    .join("")
+    .toUpperCase();
 
-// localStorage pode falhar (aba privada, bloqueio): tudo dentro de try/catch e a bolha
-// funciona sem ele.
-function ler(imovelId: string): Salvo | null {
-  try {
-    const bruto = window.localStorage.getItem(chave(imovelId));
-    return bruto ? (JSON.parse(bruto) as Salvo) : null;
-  } catch {
-    return null;
-  }
-}
+// Bolha de chat (pages.md §4): botão com a foto do corretor, balão de convite, painel de
+// 380 × 600 no desktop e folha em tela cheia no celular.
+export default function ChatBubble({ imovelId, tituloImovel, corretor, imovel, whatsapp, fotoSrc, semMetricas }: Props) {
+  const conversa = useConversa({ imovelId, corretor, imovel });
+  const { mensagens, digitando, carregando, falha, simulado, encerrada, enviar, tentarDeNovo, iniciar } = conversa;
 
-function gravar(imovelId: string, dados: Salvo) {
-  try {
-    window.localStorage.setItem(chave(imovelId), JSON.stringify(dados));
-  } catch {
-    // sem persistência: a conversa segue só na tela
-  }
-}
-
-const dormir = (ms: number) => new Promise((r) => setTimeout(r, ms));
-const novoId = () => `m-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
-
-// Horários do corretor usados só pelo mock; o atendente real recebe de listar_horarios.
-const HORARIOS_MOCK = { sab: ["09:00", "10:00", "11:00"], dom: ["10:00"] };
-
-export default function ChatBubble({ imovelId, corretor, imovel, whatsapp }: Props) {
-  const [inicial] = useState(() => ler(imovelId));
   const [aberto, setAberto] = useState(false);
-  const [mensagens, setMensagens] = useState<Mensagem[]>(inicial?.mensagens ?? []);
-  const [estado, setEstado] = useState<Estado>(inicial?.estado ?? ESTADO_INICIAL);
-  const [digitando, setDigitando] = useState(false);
   const [texto, setTexto] = useState("");
-  const [encerradaNoServidor, setEncerradaNoServidor] = useState(inicial?.encerrada ?? false);
-
-  const ultima = mensagens[mensagens.length - 1];
-  const encerrada = conversaEncerrada({
-    encerradaNoServidor,
-    mensagensDoComprador: mensagens.filter((m) => m.papel === "usuario").length,
-    digitando,
-    ultimoPapel: ultima?.papel,
-  });
+  const [balao, setBalao] = useState(false);
 
   const botao = useRef<HTMLButtonElement>(null);
-  const campo = useRef<HTMLInputElement>(null);
+  const campo = useRef<HTMLTextAreaElement>(null);
   const avisoFim = useRef<HTMLDivElement>(null);
   const fim = useRef<HTMLDivElement>(null);
-  const atual = useRef({ mensagens, estado, digitando, encerrada: false });
-  const vivo = useRef(true);
-  // Id da conversa no servidor (localStorage) e modo simulado quando a IA não está configurada.
-  const conversaId = useRef<string | null>(inicial?.conversaId ?? null);
-  const simulado = useRef(false);
-
-  useEffect(() => {
-    atual.current = { mensagens, estado, digitando, encerrada };
-  });
-
-  const contexto = useCallback(
-    (): ContextoMock => ({
-      corretor,
-      imovel,
-      horarios: calcularHorariosLivres({ horariosVisita: HORARIOS_MOCK, duracaoMin: 60, ocupados: [], agora: new Date() }).map(
-        (h) => ({ iso: h.iso, rotulo: h.rotulo }),
-      ),
-    }),
-    [corretor, imovel],
-  );
-
-  const adicionar = useCallback((m: Mensagem) => setMensagens((anteriores) => [...anteriores, m]), []);
-
-  const mensagemDeErro = (e: unknown): string => {
-    if (e instanceof ErroApi && e.codigo === "muitas_mensagens") return "Muitas mensagens em pouco tempo. Espere um instante e tente de novo.";
-    if (e instanceof ErroApi && e.codigo === "conversa_nao_encontrada") {
-      conversaId.current = null;
-      return "Reiniciei a conversa. Pode repetir sua pergunta?";
-    }
-    return "Não consegui responder agora. Tente de novo em instantes ou fale direto com o corretor.";
-  };
-
-  // Resposta da IA (rota /api/chat) em streaming. Devolve false só quando a IA não está
-  // configurada (503), para cair no atendente simulado.
-  const enviarParaApi = useCallback(
-    async (limpo: string): Promise<boolean> => {
-      let id: string | null = null;
-      const escrever = (trecho: string) => {
-        if (id === null) {
-          id = novoId();
-          setDigitando(false);
-          adicionar({ id, papel: "assistente", texto: trecho });
-        } else {
-          const alvo = id;
-          setMensagens((ms) => ms.map((m) => (m.id === alvo ? { ...m, texto: m.texto + trecho } : m)));
-        }
-      };
-
-      try {
-        for await (const ev of conversarComApi({ imovelId, conversaId: conversaId.current, mensagem: limpo })) {
-          if (!vivo.current) return true;
-          if (ev.tipo === "inicio") conversaId.current = ev.conversaId;
-          else if (ev.tipo === "texto") escrever(ev.texto);
-          else if (ev.tipo === "erro") escrever(id === null ? ev.texto : `\n${ev.texto}`);
-          else if (ev.tipo === "fim" && ev.encerrada) setEncerradaNoServidor(true);
-          else if (ev.tipo === "fim" && id !== null) {
-            const alvo = id;
-            setMensagens((ms) => ms.map((m) => (m.id === alvo ? { ...m, sugestoes: ev.sugestoes, pedeConsentimento: ev.pedeConsentimento } : m)));
-          }
-        }
-        setDigitando(false);
-        return true;
-      } catch (e) {
-        if (e instanceof ErroApi && e.codigo === "ia_indisponivel") return false;
-        setDigitando(false);
-        escrever(id === null ? mensagemDeErro(e) : `\n${mensagemDeErro(e)}`);
-        return true;
-      }
-    },
-    [adicionar, imovelId],
-  );
-
-  // Atendente simulado (src/components/chat-bubble/mock-atendente.ts), usado sem IA configurada.
-  const enviarSimulado = useCallback(
-    async (limpo: string) => {
-      const [resposta, novoEstado] = responder(atual.current.estado, limpo, contexto());
-      await dormir(600);
-      if (!vivo.current) return;
-
-      // Mostra a resposta aos poucos, como no streaming real.
-      const id = novoId();
-      const palavras = resposta.texto.split(" ");
-      setDigitando(false);
-      adicionar({ id, papel: "assistente", texto: "" });
-      for (let i = 1; i <= palavras.length; i++) {
-        await dormir(28);
-        if (!vivo.current) return;
-        setMensagens((ms) => ms.map((m) => (m.id === id ? { ...m, texto: palavras.slice(0, i).join(" ") } : m)));
-      }
-      setMensagens((ms) => ms.map((m) => (m.id === id ? { ...m, sugestoes: resposta.sugestoes, pedeConsentimento: resposta.pedeConsentimento } : m)));
-      setEstado(novoEstado);
-    },
-    [adicionar, contexto],
-  );
-
-  const enviar = useCallback(
-    async (conteudo: string) => {
-      const limpo = conteudo.trim().slice(0, 500);
-      if (!limpo || atual.current.digitando || atual.current.encerrada) return;
-
-      adicionar({ id: novoId(), papel: "usuario", texto: limpo });
-      setTexto("");
-      setDigitando(true);
-
-      if (!simulado.current && (await enviarParaApi(limpo))) return;
-      simulado.current = true;
-      await enviarSimulado(limpo);
-    },
-    [adicionar, enviarParaApi, enviarSimulado],
-  );
 
   const abrir = useCallback(
     (modo: ModoChat) => {
       setAberto(true);
-      if (atual.current.mensagens.length === 0) {
-        adicionar({ id: novoId(), papel: "assistente", ...saudacao(contexto()) });
-        if (modo === "agendamento") void enviar("Quero agendar uma visita");
-      } else if (modo === "agendamento" && atual.current.estado.fase === "livre") {
-        void enviar("Quero agendar uma visita");
-      }
+      setBalao(false);
+      if (!semMetricas) registrarEventoUmaVez("chat_aberto", imovelId);
+      void iniciar(modo);
     },
-    [adicionar, contexto, enviar],
+    [iniciar, imovelId, semMetricas],
   );
 
   useEffect(() => {
-    vivo.current = true;
     const aoPedir = (e: Event) => abrir((e as CustomEvent<ModoChat>).detail ?? "conversa");
     window.addEventListener(EVENTO_ABRIR_CHAT, aoPedir);
     window.dispatchEvent(new Event(EVENTO_CHAT_PRONTO));
-    return () => {
-      vivo.current = false;
-      window.removeEventListener(EVENTO_ABRIR_CHAT, aoPedir);
-    };
+    return () => window.removeEventListener(EVENTO_ABRIR_CHAT, aoPedir);
   }, [abrir]);
 
+  // Balão "Dúvidas sobre este imóvel?" depois de 8 s, uma vez por sessão.
   useEffect(() => {
-    if (!digitando) gravar(imovelId, { mensagens, estado, conversaId: conversaId.current, encerrada: encerradaNoServidor });
-  }, [imovelId, mensagens, estado, digitando, encerradaNoServidor]);
+    let visto = false;
+    try {
+      visto = window.sessionStorage.getItem(CHAVE_BALAO) === "1";
+    } catch {
+      // sem sessionStorage: mostra mesmo assim
+    }
+    if (visto) return;
+    const id = window.setTimeout(() => {
+      setBalao(true);
+      try {
+        window.sessionStorage.setItem(CHAVE_BALAO, "1");
+      } catch {
+        // ignora
+      }
+    }, ESPERA_DO_BALAO_MS);
+    return () => window.clearTimeout(id);
+  }, []);
 
   useEffect(() => {
     if (encerrada) avisoFim.current?.focus();
@@ -224,22 +95,52 @@ export default function ChatBubble({ imovelId, corretor, imovel, whatsapp }: Pro
 
   useEffect(() => {
     fim.current?.scrollIntoView({ block: "end" });
-  }, [mensagens, digitando, aberto]);
+  }, [mensagens, digitando, falha, aberto]);
 
-  const sugestoes = !digitando && !encerrada && ultima?.papel === "assistente" ? ultima.sugestoes : undefined;
+  const ultima = mensagens[mensagens.length - 1];
+  const sugestoesBrutas = !digitando && !encerrada && ultima?.papel === "assistente" ? ultima.sugestoes : undefined;
+  const sugestoes = ultima?.pedeConsentimento ? sugestoesBrutas : sugestoesBrutas?.slice(0, MAXIMO_DE_HORARIOS);
+
+  function mandar() {
+    const conteudo = texto;
+    setTexto("");
+    if (campo.current) campo.current.style.height = "auto";
+    void enviar(conteudo);
+  }
 
   return (
     <Dialog.Root open={aberto} onOpenChange={setAberto} modal="trap-focus">
+      {balao && !aberto && (
+        <div className="fixed right-4 bottom-[9.5rem] z-40 flex max-w-[15rem] items-start gap-1 rounded-2xl bg-card p-1 pl-4 shadow-lg ring-1 ring-foreground/10 lg:bottom-24">
+          <button type="button" onClick={() => abrir("conversa")} className="min-h-11 py-2 text-left text-sm font-medium focus-visible:outline-none">
+            Dúvidas sobre este imóvel?
+          </button>
+          <button
+            type="button"
+            onClick={() => setBalao(false)}
+            aria-label="Dispensar o convite"
+            className="flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+          >
+            <X className="size-4" aria-hidden />
+          </button>
+        </div>
+      )}
+
       <button
         ref={botao}
         type="button"
         aria-label="Abrir conversa com o atendente virtual"
         aria-expanded={aberto}
         onClick={() => (aberto ? setAberto(false) : abrir("conversa"))}
-        className="fixed right-4 bottom-20 z-40 inline-flex h-14 items-center gap-2 rounded-full bg-primary px-5 font-medium text-primary-foreground shadow-lg focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none lg:bottom-6"
+        className="fixed right-4 bottom-20 z-40 size-14 rounded-full shadow-lg focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none lg:bottom-6"
       >
-        <MessageCircle className="size-5" aria-hidden />
-        Conversar
+        <Avatar className="size-14 ring-2 ring-white">
+          {fotoSrc && <AvatarImage src={fotoSrc} alt="" />}
+          <AvatarFallback className="bg-primary text-base font-semibold text-primary-foreground">{iniciais(corretor)}</AvatarFallback>
+        </Avatar>
+        <span className="absolute -right-0.5 -bottom-0.5 flex size-6 items-center justify-center rounded-full bg-cta text-cta-foreground ring-2 ring-white" aria-hidden>
+          <MessageCircle className="size-3.5" />
+        </span>
       </button>
 
       <Dialog.Portal>
@@ -247,10 +148,22 @@ export default function ChatBubble({ imovelId, corretor, imovel, whatsapp }: Pro
           initialFocus={campo}
           finalFocus={botao}
           aria-describedby={undefined}
-          className="fixed inset-0 z-50 flex flex-col bg-background outline-none sm:inset-auto sm:right-4 sm:bottom-24 sm:h-[600px] sm:max-h-[calc(100dvh-7rem)] sm:w-[400px] sm:rounded-2xl sm:border sm:shadow-lg"
+          className={cn(
+            "fixed inset-0 z-50 flex flex-col bg-background outline-none",
+            "transition-[transform,opacity] duration-200 data-[ending-style]:translate-y-full data-[starting-style]:translate-y-full motion-reduce:transition-none",
+            "sm:inset-auto sm:right-4 sm:bottom-24 sm:h-[600px] sm:max-h-[calc(100dvh-7rem)] sm:w-[380px] sm:rounded-3xl sm:border sm:shadow-lg",
+            "sm:data-[ending-style]:translate-y-4 sm:data-[ending-style]:opacity-0 sm:data-[starting-style]:translate-y-4 sm:data-[starting-style]:opacity-0",
+          )}
         >
-          <header className="flex items-center justify-between gap-2 bg-primary px-4 py-2 text-primary-foreground sm:rounded-t-2xl">
-            <Dialog.Title className="font-heading text-base font-semibold">Assistente virtual de {corretor}</Dialog.Title>
+          <header className="flex items-center gap-3 bg-primary py-2 pr-2 pl-4 text-primary-foreground sm:rounded-t-3xl">
+            <Avatar className="size-10 ring-2 ring-white/40">
+              {fotoSrc && <AvatarImage src={fotoSrc} alt="" />}
+              <AvatarFallback className="bg-white/20 text-sm font-semibold text-primary-foreground">{iniciais(corretor)}</AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 flex-1 leading-tight">
+              <Dialog.Title className="truncate text-base font-semibold">Assistente virtual de {corretor}</Dialog.Title>
+              <p className="text-xs text-primary-foreground/80">Responde na hora</p>
+            </div>
             <Dialog.Close
               render={<Button variant="ghost" size="icon" className="size-11 text-primary-foreground hover:bg-primary-foreground/15 hover:text-primary-foreground" aria-label="Fechar conversa" />}
             >
@@ -259,17 +172,25 @@ export default function ChatBubble({ imovelId, corretor, imovel, whatsapp }: Pro
           </header>
 
           <div role="log" aria-live="polite" aria-label="Conversa com o atendente" className="flex flex-1 flex-col gap-3 overflow-y-auto p-4">
-            {mensagens.map((m) => (
-              <p
-                key={m.id}
-                className={cn(
-                  "max-w-[85%] rounded-2xl px-4 py-2 text-base leading-snug whitespace-pre-line",
-                  m.papel === "usuario" ? "self-end bg-primary text-primary-foreground" : "self-start bg-muted",
-                  m.papel === "assistente" && m.texto === "" && "sr-only",
-                )}
-              >
-                {m.texto}
+            {carregando && (
+              <p role="status" className="self-center text-sm text-muted-foreground">
+                Retomando a conversa…
               </p>
+            )}
+            {mensagens.map((m) => (
+              <div key={m.id} className="contents">
+                {(m.papel === "usuario" || m.texto !== "") && (
+                  <p
+                    className={cn(
+                      "max-w-[85%] rounded-2xl px-4 py-2 text-base leading-snug whitespace-pre-line",
+                      m.papel === "usuario" ? "self-end bg-primary text-primary-foreground" : "self-start bg-muted",
+                    )}
+                  >
+                    {m.texto}
+                  </p>
+                )}
+                {m.visita && <CartaoVisita horario={m.visita.horario} imovel={tituloImovel} />}
+              </div>
             ))}
             {digitando && (
               <p className="self-start rounded-2xl bg-muted px-4 py-2 text-muted-foreground" role="status">
@@ -277,7 +198,15 @@ export default function ChatBubble({ imovelId, corretor, imovel, whatsapp }: Pro
                 <span className="sr-only">O atendente está digitando</span>
               </p>
             )}
-            {sugestoes && (
+            {falha && (
+              <div role="alert" className="flex flex-col items-start gap-2 self-start rounded-2xl border border-destructive/40 bg-destructive/5 p-4 text-sm">
+                <p>{falha.texto}</p>
+                <Button type="button" variant="outline" className="h-11 rounded-full" onClick={tentarDeNovo}>
+                  Tentar de novo
+                </Button>
+              </div>
+            )}
+            {sugestoes && sugestoes.length > 0 && (
               <ul className="flex flex-wrap gap-2" aria-label={ultima?.pedeConsentimento ? "Consentimento" : "Sugestões de resposta"}>
                 {sugestoes.map((s) => (
                   <li key={s}>
@@ -297,7 +226,7 @@ export default function ChatBubble({ imovelId, corretor, imovel, whatsapp }: Pro
 
           <footer className="flex flex-col gap-2 border-t p-3">
             {encerrada ? (
-              <div ref={avisoFim} tabIndex={-1} role="status" className="flex flex-col gap-3 rounded-xl bg-muted p-4 text-sm outline-none">
+              <div ref={avisoFim} tabIndex={-1} role="status" className="flex flex-col gap-3 rounded-2xl bg-muted p-4 text-sm outline-none">
                 <p>
                   <strong>Esta conversa chegou ao limite de mensagens.</strong> Para continuar, fale direto com {corretor} pelos contatos da
                   página.
@@ -314,30 +243,42 @@ export default function ChatBubble({ imovelId, corretor, imovel, whatsapp }: Pro
                 )}
               </div>
             ) : (
-            <form
-              className="flex gap-2"
-              onSubmit={(e) => {
-                e.preventDefault();
-                void enviar(texto);
-              }}
-            >
-              <input
-                ref={campo}
-                value={texto}
-                onChange={(e) => setTexto(e.target.value)}
-                maxLength={500}
-                autoComplete="off"
-                aria-label="Sua mensagem"
-                placeholder="Digite sua mensagem"
-                className="h-11 min-w-0 flex-1 rounded-lg border bg-background px-3 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-              />
-              <Button type="submit" size="icon" className="size-11" aria-label="Enviar mensagem" disabled={digitando || texto.trim() === ""}>
-                <Send />
-              </Button>
-            </form>
+              <form
+                className="flex items-end gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  mandar();
+                }}
+              >
+                <textarea
+                  ref={campo}
+                  value={texto}
+                  rows={1}
+                  maxLength={500}
+                  aria-label="Sua mensagem"
+                  placeholder="Digite sua mensagem"
+                  onChange={(e) => {
+                    setTexto(e.target.value);
+                    e.currentTarget.style.height = "auto";
+                    e.currentTarget.style.height = `${Math.min(e.currentTarget.scrollHeight, 112)}px`;
+                  }}
+                  onKeyDown={(e) => {
+                    // Enter envia; Shift+Enter quebra a linha.
+                    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                      e.preventDefault();
+                      mandar();
+                    }
+                  }}
+                  className="max-h-28 min-h-11 min-w-0 flex-1 resize-none rounded-2xl border bg-background px-4 py-2.5 text-base leading-snug outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                />
+                <Button type="submit" size="icon" className="size-11 rounded-full" aria-label="Enviar mensagem" disabled={digitando || texto.trim() === ""}>
+                  <Send />
+                </Button>
+              </form>
             )}
+            {simulado && <p className="text-center text-xs font-medium text-cta">Atendente de demonstração: as respostas são simuladas.</p>}
             <p className="text-center text-xs text-muted-foreground">
-              Ao conversar, você concorda com a{" "}
+              Assistente virtual. Ao conversar, você concorda com a{" "}
               <Link href="/privacidade" target="_blank" className="underline underline-offset-2">
                 política de privacidade
               </Link>

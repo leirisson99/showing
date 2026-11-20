@@ -49,7 +49,7 @@ export function ListaClientes({ itens }: { itens: ItemCliente[] }) {
 
   if (itens.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed p-10 text-center">
+      <div className="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-foreground/25 p-10 text-center">
         <Users className="size-8 text-muted-foreground" aria-hidden />
         <p className="max-w-sm text-muted-foreground">
           Nenhum cliente ainda. Quando um comprador deixar nome e contato na conversa e autorizar, ele aparece aqui.
@@ -70,7 +70,7 @@ export function ListaClientes({ itens }: { itens: ItemCliente[] }) {
             placeholder="Buscar por nome, contato ou imóvel"
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            className="h-11 pl-9 text-base"
+            className="h-11 rounded-full pl-9 text-base"
           />
         </div>
       </div>
@@ -84,12 +84,12 @@ export function ListaClientes({ itens }: { itens: ItemCliente[] }) {
       ) : (
         <ul className="grid gap-3 lg:grid-cols-2">
           {visiveis.map((c) => (
-            <li key={c.id} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
+            <li key={c.id} className="flex flex-col gap-3 rounded-3xl bg-card p-5 ring-1 ring-foreground/10">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <Link
                     href={`/painel/clientes/${c.id}`}
-                    className="font-heading text-lg font-semibold underline-offset-4 hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                    className="text-lg font-semibold underline-offset-4 hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
                   >
                     {c.nome}
                   </Link>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { CabecalhoPagina } from "@/components/painel/CabecalhoPagina";
 import { FormPerfil } from "@/components/painel/FormPerfil";
 import { urlDaFoto } from "@/lib/fotos";
 import { formatarTelefone } from "@/lib/format";
@@ -13,10 +14,7 @@ export default async function PerfilPage() {
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-8">
-      <div>
-        <h1 className="text-[26px] font-bold lg:text-[32px]">Perfil</h1>
-        <p className="mt-1 text-muted-foreground">Como você aparece para o comprador e quando ele pode visitar seus imóveis.</p>
-      </div>
+      <CabecalhoPagina rotulo="Sua conta" titulo="Perfil" descricao="Como você aparece para o comprador e quando ele pode visitar seus imóveis." />
       <FormPerfil
         email={perfil?.email ?? corretor.email}
         fotoSrc={perfil?.fotoFileId ? urlDaFoto(perfil.fotoFileId) : null}

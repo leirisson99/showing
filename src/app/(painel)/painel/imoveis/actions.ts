@@ -16,7 +16,7 @@ import {
   removerFotoDoImovel,
   type Resultado,
 } from "@/lib/painel/imoveis";
-import { imovelSchema } from "@/lib/painel/schema";
+import { etapaDadosSchema, imovelSchema } from "@/lib/painel/schema";
 import { exigirCorretor } from "@/lib/session";
 
 // Mutações do painel. Todas partem do corretor da sessão (RN-07) e validam com Zod.
@@ -27,6 +27,19 @@ function atualizarPaginas(imovelId: string, slug?: string) {
   revalidatePath("/painel/imoveis");
   revalidatePath(`/painel/imoveis/${imovelId}`);
   if (slug) revalidatePath(`/imovel/${slug}`);
+}
+
+// Primeiro passo do cadastro: cria o rascunho só com os dados. O título e a descrição saem do
+// gerador a partir da ficha (RN-06: continuam rascunho até o corretor revisar na aba Texto).
+export async function criarRascunhoAction(entrada: unknown): Promise<Resultado<{ id: string }>> {
+  const corretor = await exigirCorretor();
+  const dados = etapaDadosSchema.safeParse(entrada);
+  if (!dados.success) return { ok: false, erro: dados.error.issues[0].message };
+
+  const texto = await gerarTituloEDescricao({ ...dados.data, caracteristicas: [], infoAdicional: null });
+  const novo = await criarImovel(corretor.id, { ...dados.data, ...texto, caracteristicas: [], infoAdicional: null });
+  revalidatePath("/painel/imoveis");
+  return { ok: true, id: novo.id };
 }
 
 export async function salvarImovel(imovelId: string | null, entrada: unknown): Promise<Resultado<{ id: string }>> {

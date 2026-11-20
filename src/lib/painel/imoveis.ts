@@ -40,8 +40,6 @@ export async function criarImovel(corretorId: string, dados: DadosImovel): Promi
     corretorId,
     slug: gerarSlug(dados, slugsExistentes()),
     status: "rascunho",
-    latitude: null,
-    longitude: null,
     infoBairro: null,
     fotos: [],
     publicadoEm: null,

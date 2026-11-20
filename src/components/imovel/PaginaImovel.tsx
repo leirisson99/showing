@@ -20,11 +20,12 @@ import { MedidasDoImovel, PrecoImovel, SelosDoImovel } from "./FichaImovel";
 import { GaleriaGrade } from "./GaleriaGrade";
 import { InfoBairro } from "./InfoBairro";
 import { MapaRegiao } from "./MapaRegiao";
+import { RegistrarVisualizacao } from "./RegistrarVisualizacao";
 
 type Props = {
   imovel: ImovelPublico;
-  /** Texto do aviso quando é a pré-visualização do corretor (sem eventos nem indexação). */
-  aviso?: string;
+  /** Faixa no topo da pré-visualização do corretor. Com ela, a página não conta métricas. */
+  faixa?: React.ReactNode;
 };
 
 const secao = "mx-auto w-full max-w-6xl px-5 py-16";
@@ -69,7 +70,7 @@ function perguntas(i: ImovelPublico, vendido: boolean): ItemFaq[] {
   return itens;
 }
 
-export function PaginaImovel({ imovel, aviso }: Props) {
+export function PaginaImovel({ imovel, faixa }: Props) {
   const vendido = imovel.status === "vendido";
   const capa = imovel.fotos[0];
   const demais = imovel.fotos.slice(1);
@@ -81,11 +82,7 @@ export function PaginaImovel({ imovel, aviso }: Props) {
 
   return (
     <>
-      {aviso && (
-        <div role="status" className="bg-cta px-4 py-3 text-center font-medium text-cta-foreground">
-          {aviso}
-        </div>
-      )}
+      {faixa ?? <RegistrarVisualizacao imovelId={imovel.id} />}
       {vendido && (
         <div role="status" className="bg-sand px-4 py-3 text-center font-medium text-foreground">
           Este imóvel foi vendido
@@ -286,8 +283,11 @@ export function PaginaImovel({ imovel, aviso }: Props) {
       {!vendido && (
         <ChatBubbleLazy
           imovelId={imovel.id}
+          tituloImovel={imovel.titulo}
           corretor={imovel.corretor.nome}
           whatsapp={imovel.corretor.whatsapp}
+          fotoSrc={imovel.corretor.fotoSrc}
+          semMetricas={Boolean(faixa)}
           imovel={{
             preco: imovel.preco,
             condominio: imovel.condominio,

@@ -13,7 +13,7 @@ const LINKS = [
   { href: "/painel/perfil", rotulo: "Perfil", exato: false },
 ];
 
-export function NavPainel() {
+export function NavPainel({ pendentes = 0 }: { pendentes?: number }) {
   const caminho = usePathname();
   return (
     <nav aria-label="Painel" className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 md:pb-0">
@@ -30,6 +30,12 @@ export function NavPainel() {
             )}
           >
             {rotulo}
+            {href === "/painel/conversas" && pendentes > 0 && (
+              <span className="ml-2 inline-flex min-w-5 items-center justify-center rounded-full bg-cta px-1.5 text-xs font-semibold text-cta-foreground">
+                {pendentes}
+                <span className="sr-only"> conversas esperando resposta</span>
+              </span>
+            )}
           </Link>
         );
       })}

@@ -1,4 +1,4 @@
-import { SUGESTOES_INICIAIS, textoSaudacao } from "@/lib/ai/saudacao";
+import { BOTOES_CONSENTIMENTO, SUGESTOES_INICIAIS, textoSaudacao } from "@/lib/ai/saudacao";
 import { formatarArea, formatarPreco } from "@/lib/format";
 
 // MOCK do atendente para desenvolver a bolha antes da rota /api/chat (card C3).
@@ -39,9 +39,13 @@ export type Resposta = {
   texto: string;
   sugestoes?: string[];
   pedeConsentimento?: boolean;
+  /** Pedido de visita registrado nesta resposta (a bolha mostra o cartão). */
+  visita?: { horario: string };
 };
 
 export const ESTADO_INICIAL: Estado = { fase: "livre" };
+
+const CONSENTIMENTO = BOTOES_CONSENTIMENTO;
 
 export { SUGESTOES_INICIAIS };
 
@@ -110,24 +114,27 @@ export function responder(estado: Estado, entrada: string, ctx: ContextoMock): [
       return [
         {
           texto: `Posso guardar seu nome e contato e passar para ${ctx.corretor}? Só ele vê esses dados.`,
-          sugestoes: ["Autorizo", "Não autorizo"],
+          sugestoes: CONSENTIMENTO,
           pedeConsentimento: true,
         },
         { ...estado, fase: "pedindo_consentimento", contato },
       ];
     }
     case "pedindo_consentimento": {
-      if (tem(texto, /^(nao|nao autorizo)\b/)) {
+      if (tem(texto, /^(nao|nao autorizo|prefiro nao)\b/)) {
         return [{ texto: `Sem problema, não guardo seus dados. Se quiser, fale direto com ${ctx.corretor}.` }, { fase: "livre" }];
       }
       if (tem(texto, /^(sim|autorizo|pode|claro|ok)\b/)) {
         return [
-          { texto: `Pedido de visita enviado! ${ctx.corretor} vai confirmar o horário com você em breve.` },
+          {
+            texto: `Pedido de visita enviado! ${ctx.corretor} vai confirmar o horário com você em breve.`,
+            visita: { horario: ctx.horarios.find((h) => h.iso === estado.horario)?.rotulo ?? "horário escolhido" },
+          },
           { ...estado, fase: "concluida" },
         ];
       }
       return [
-        { texto: "Preciso do seu aval para guardar nome e contato. Você autoriza?", sugestoes: ["Autorizo", "Não autorizo"], pedeConsentimento: true },
+        { texto: "Preciso do seu aval para guardar nome e contato. Você autoriza?", sugestoes: CONSENTIMENTO, pedeConsentimento: true },
         estado,
       ];
     }

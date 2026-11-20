@@ -21,7 +21,7 @@ const dados: DadosPerfil = {
 
 const imovel: DadosImovel = {
   tipo: "apartamento", finalidade: "venda", titulo: "Apartamento de teste", descricao: "Descrição de teste com mais de vinte caracteres.",
-  bairro: "Garcia", cidade: "Blumenau", endereco: null, mostrarEndereco: false, preco: 300000, condominio: null, iptu: null,
+  bairro: "Garcia", cidade: "Blumenau", endereco: null, mostrarEndereco: false, latitude: null, longitude: null, preco: 300000, condominio: null, iptu: null,
   quartos: 2, suites: null, banheiros: 1, vagas: 1, areaM2: 60, aceitaFinanciamento: true, aceitaFgts: false, caracteristicas: [], infoAdicional: null,
 };
 

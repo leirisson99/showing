@@ -13,6 +13,8 @@ export type ConversaMock = ConversaDoAtendimento & {
   atualizadaEm: Date;
   consentimentoEm: Date | null;
   motivo: string | null;
+  /** Quando o corretor marcou a transferência como lida. */
+  lidaEm: Date | null;
 };
 
 export type VisitaMock = {
@@ -59,6 +61,7 @@ export function criarRepositorioMock(opcoes: Opcoes = {}) {
       atualizadaEm: agora,
       consentimentoEm: null,
       motivo: null,
+      lidaEm: null,
     };
   };
 
@@ -118,6 +121,7 @@ export function criarRepositorioMock(opcoes: Opcoes = {}) {
     async marcarTransferida(id, motivo) {
       const c = conversa(id);
       c.transferida = true;
+      c.lidaEm = null; // nova transferência volta a pedir atenção
       c.motivo = c.motivo ? `${c.motivo} | ${motivo}` : motivo;
       c.atualizadaEm = new Date();
       motivos.push(motivo);

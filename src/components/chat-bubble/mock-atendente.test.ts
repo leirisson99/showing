@@ -63,16 +63,18 @@ describe("atendente de exemplo", () => {
   });
 
   it("agenda na ordem: horário, nome, contato, consentimento (RN-11, RN-12)", () => {
-    const { respostas, estado } = conversa("quero agendar", ctx.horarios[0].rotulo, "Maria Souza", "(47) 99999-0000", "Autorizo");
+    const { respostas, estado } = conversa("quero agendar", ctx.horarios[0].rotulo, "Maria Souza", "(47) 99999-0000", "Pode guardar");
     expect(respostas[2].texto).toContain("telefone ou e-mail");
     expect(respostas[3].pedeConsentimento).toBe(true);
     expect(respostas[4].texto).toContain("Pedido de visita enviado");
     expect(respostas[4].texto).not.toMatch(/confirmad/);
+    expect(respostas[3].sugestoes).toEqual(["Pode guardar", "Prefiro não"]);
+    expect(respostas[4].visita).toEqual({ horario: ctx.horarios[0].rotulo });
     expect(estado.fase).toBe("concluida");
   });
 
   it("não conclui sem consentimento e não guarda os dados", () => {
-    const { ultima, estado } = conversa("quero agendar", ctx.horarios[0].rotulo, "Maria", "maria@exemplo.com", "Não autorizo");
+    const { ultima, estado } = conversa("quero agendar", ctx.horarios[0].rotulo, "Maria", "maria@exemplo.com", "Prefiro não");
     expect(ultima.texto).toContain("não guardo seus dados");
     expect(estado.fase).toBe("livre");
     expect(estado.nome).toBeUndefined();

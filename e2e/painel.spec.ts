@@ -23,9 +23,10 @@ test.describe("painel", () => {
     await expect(page.getByText("Visita cancelada")).toBeVisible();
   });
 
-  test("imóvel: cadastra, envia fotos, publica e abre a página pública", async ({ page }) => {
+  test("imóvel: cadastra os dados, envia fotos, publica pela revisão e abre a página pública", async ({ page }) => {
     await page.goto("/painel/imoveis/novo");
 
+    // Etapa 1: dados. Ao salvar, o rascunho já existe (com título e descrição gerados).
     await page.getByRole("combobox", { name: "Tipo" }).click();
     await page.getByRole("option", { name: "Apartamento" }).click();
     await page.getByLabel("Bairro").fill("Garcia");
@@ -34,23 +35,23 @@ test.describe("painel", () => {
     await page.getByLabel("Quartos", { exact: true }).fill("2");
     await page.getByLabel("Banheiros").fill("1");
     await page.getByLabel("Vagas de garagem").fill("1");
-    await page.getByRole("button", { name: /Gerar título e descrição/ }).click();
-    await expect(page.getByLabel("Título")).not.toHaveValue("");
+    await page.getByRole("button", { name: "Salvar e continuar" }).click();
+    await page.waitForURL(/\/painel\/imoveis\/imovel-.*aba=caracteristicas/);
 
-    await page.getByRole("button", { name: /Salvar e continuar/ }).click();
-    await page.waitForURL(/\/painel\/imoveis\/imovel-/);
-
+    // Etapa 3: fotos.
+    await page.getByRole("tab", { name: "Fotos" }).click();
     for (let i = 0; i < 3; i++) {
       await page.locator("#fotos").setInputFiles(FOTO);
       await expect(page.getByText(new RegExp(`^${i + 1} (foto|fotos)\\.`))).toBeVisible();
     }
 
+    // Etapa 5: revisão e publicação.
+    await page.getByRole("tab", { name: "Revisão" }).click();
     await page.getByRole("button", { name: "Publicar imóvel" }).click();
     await expect(page.getByText("Imóvel publicado")).toBeVisible();
 
     const url = await page.getByText(/\/imovel\/apartamento-2-quartos-garcia/).first().textContent();
-    const caminho = new URL(url!.trim()).pathname;
-    await page.goto(caminho);
+    await page.goto(new URL(url!.trim()).pathname);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   });
 
@@ -58,6 +59,6 @@ test.describe("painel", () => {
     await page.goto("/painel/conversas");
     await expect(page.getByText(/Passou para você/).first()).toBeVisible();
     await page.locator('a[href^="/painel/conversas/"]').first().click();
-    await expect(page.getByRole("heading", { name: "Conversa" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Histórico" })).toBeVisible();
   });
 });

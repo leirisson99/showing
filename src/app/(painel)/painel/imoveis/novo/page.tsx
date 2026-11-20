@@ -1,14 +1,18 @@
 import type { Metadata } from "next";
-import { FormImovel } from "@/components/painel/FormImovel";
+import { CabecalhoPagina } from "@/components/painel/CabecalhoPagina";
+import { NovoImovel } from "@/components/painel/imovel/NovoImovel";
 
 export const metadata: Metadata = { title: "Novo imóvel — Showing", robots: { index: false } };
 
 export default function NovoImovelPage() {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-8">
-      <h1 className="text-[26px] font-bold lg:text-[32px]">Novo imóvel</h1>
-      <p className="text-muted-foreground">Preencha os dados. As fotos entram no próximo passo, depois de salvar.</p>
-      <FormImovel />
+      <CabecalhoPagina
+        rotulo="Cadastro"
+        titulo="Novo imóvel"
+        descricao="Comece pelos dados. Ao salvar, o imóvel vira rascunho e você segue para características, fotos e texto, quando quiser."
+      />
+      <NovoImovel />
     </main>
   );
 }

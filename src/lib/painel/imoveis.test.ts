@@ -27,6 +27,8 @@ const dados: DadosImovel = {
   cidade: "Blumenau",
   endereco: null,
   mostrarEndereco: false,
+  latitude: null,
+  longitude: null,
   preco: 350000,
   condominio: null,
   iptu: null,

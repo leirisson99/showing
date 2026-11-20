@@ -9,7 +9,16 @@ import type { ContextoMock } from "./mock-atendente";
 // "Conversar"/"Agendar visita". Assim não pesa no carregamento nem no SEO.
 const ChatBubble = dynamic(() => import("./ChatBubble"), { ssr: false });
 
-type Props = { imovelId: string; corretor: string; imovel: ContextoMock["imovel"]; whatsapp?: string | null };
+type Props = {
+  imovelId: string;
+  tituloImovel: string;
+  corretor: string;
+  imovel: ContextoMock["imovel"];
+  whatsapp?: string | null;
+  fotoSrc?: string | null;
+  /** Pré-visualização do corretor: a abertura da conversa não conta como métrica. */
+  semMetricas?: boolean;
+};
 
 export function ChatBubbleLazy(props: Props) {
   const [carregar, setCarregar] = useState(false);

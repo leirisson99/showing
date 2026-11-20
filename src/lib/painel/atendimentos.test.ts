@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { calcularHorariosLivres } from "@/lib/ai/horarios";
 import { estadoAtendimentoMock, reiniciarAtendimentoMock, repositorioMockGlobal } from "@/mocks/atendimento";
 import { reiniciarStore, store } from "@/mocks/painel";
-import { alterarStatusVisita, buscarCliente, buscarConversaDoCorretor, listarClientes, listarConversas, listarVisitas } from "./atendimentos";
+import { alterarStatusVisita, buscarCliente, buscarConversaDoCorretor, contarNaoLidas, listarClientes, listarConversas, listarVisitas, marcarConversaLida } from "./atendimentos";
 
 const DONO = "mock-corretor";
 const OUTRO = "outro-corretor";
@@ -163,5 +163,28 @@ describe("clientes", () => {
     expect(await buscarCliente(DONO, dele.conversaId)).toBeNull();
     expect(await buscarCliente(OUTRO, dele.conversaId)).not.toBeNull();
     for (const c of await listarClientes(DONO)) expect(c.id).not.toMatch(/47999990000|@/);
+  });
+});
+
+describe("conversas transferidas: lida e não lida", () => {
+  it("a transferência nasce não lida, marcar como lida tira o aviso e nova transferência volta a avisar", async () => {
+    const repo = repositorioMockGlobal();
+    const id = await repo.criarConversa("mock-1");
+    await repo.salvarMensagens(id, [{ role: "user", content: [{ text: "Tem piscina?" }] }]);
+    await repo.marcarTransferida(id, "Pergunta sobre piscina");
+    expect(await contarNaoLidas(DONO)).toBe(1);
+
+    expect(await marcarConversaLida(DONO, id)).toEqual({ ok: true });
+    expect(await contarNaoLidas(DONO)).toBe(0);
+
+    await repo.marcarTransferida(id, "Outra dúvida");
+    expect(await contarNaoLidas(DONO)).toBe(1);
+  });
+
+  it("só o dono marca como lida", async () => {
+    const dele = await visitaPara(imovelDoOutro());
+    await repositorioMockGlobal().marcarTransferida(dele.conversaId, "dúvida");
+    expect(await marcarConversaLida(DONO, dele.conversaId)).toMatchObject({ ok: false });
+    expect(await contarNaoLidas("outro-corretor")).toBe(1);
   });
 });

@@ -11,7 +11,7 @@ vi.mock("@/lib/ai/modelo", () => ({
   criarModelo: () => estado.modelo,
 }));
 
-import { POST } from "./route";
+import { GET, POST } from "./route";
 
 class ModeloFalso extends Model {
   recebidas: Message[][] = [];
@@ -131,7 +131,7 @@ describe("POST /api/chat", () => {
   it("mostra os botões de consentimento quando o atendente pede o aval", async () => {
     estado.modelo = new ModeloFalso([resposta("Posso guardar seu nome e contato para passar ao corretor?")]);
     const r = await chamar({ imovelId: "mock-1", mensagem: "Maria, 47 99999-0000" });
-    expect(r.eventos.at(-1)).toEqual({ tipo: "fim", pedeConsentimento: true, sugestoes: ["Autorizo", "Não autorizo"] });
+    expect(r.eventos.at(-1)).toEqual({ tipo: "fim", pedeConsentimento: true, sugestoes: ["Pode guardar", "Prefiro não"] });
   });
 
   it("encerra no limite de 30 mensagens do comprador sem chamar o modelo (RN-16)", async () => {
@@ -182,5 +182,59 @@ describe("POST /api/chat", () => {
     expect(r.eventos.at(-1)).toMatchObject({ tipo: "erro" });
     expect(JSON.stringify(log.mock.calls)).not.toMatch(/47999990000|segredo-do-comprador/);
     log.mockRestore();
+  });
+});
+
+async function lerConversa(consulta: Record<string, string>) {
+  const r = await GET(new Request(`http://localhost/api/chat?${new URLSearchParams(consulta)}`, { headers: { "x-forwarded-for": `ip-${ip}` } }));
+  return { status: r.status, json: await r.json() };
+}
+
+describe("POST /api/chat: visita pedida", () => {
+  it("devolve o horário no fim quando o atendente agenda", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-18T12:00:00-03:00"));
+    estado.modelo = new ModeloFalso([
+      chamarFerramenta("registrar_lead", { imovel_id: "mock-1", nome: "Maria Teste", telefone: "47999990000", consentimento: true }, "t1"),
+      chamarFerramenta("agendar_visita", { imovel_id: "mock-1", data_hora: "2026-11-21T09:00:00-03:00" }, "t2"),
+      resposta("Pedido enviado! O corretor vai confirmar."),
+    ]);
+
+    const r = await chamar({ imovelId: "mock-1", mensagem: "Sábado às 9h, pode guardar meus dados" });
+    expect(r.eventos.at(-1)).toEqual({ tipo: "fim", visita: { horario: "sábado, 21/11, às 09:00" } });
+  });
+});
+
+describe("GET /api/chat (retomar a conversa)", () => {
+  it("devolve só o texto das mensagens, sem chamadas de ferramenta", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-18T12:00:00-03:00"));
+    estado.modelo = new ModeloFalso([chamarFerramenta("listar_horarios", { imovel_id: "mock-1" }), resposta("Tenho sábado às 9h.")]);
+    const r = await chamar({ imovelId: "mock-1", mensagem: "Quero visitar" });
+    const conversaId = r.eventos[0].conversaId;
+
+    const lida = await lerConversa({ imovelId: "mock-1", conversaId });
+    expect(lida.status).toBe(200);
+    expect(lida.json).toEqual({
+      mensagens: [
+        { papel: "usuario", texto: "Quero visitar" },
+        { papel: "assistente", texto: "Tenho sábado às 9h." },
+      ],
+      encerrada: false,
+    });
+  });
+
+  it("marca como encerrada com 30 mensagens do comprador", async () => {
+    const repo = obterRepositorio();
+    const conversaId = await repo.criarConversa("mock-1");
+    await repo.salvarMensagens(conversaId, Array.from({ length: 30 }, (_, i) => falaDoComprador(`m${i}`)));
+    expect((await lerConversa({ imovelId: "mock-1", conversaId })).json.encerrada).toBe(true);
+  });
+
+  it("recusa pedido inválido, conversa inexistente e conversa de outro imóvel", async () => {
+    expect((await lerConversa({ imovelId: "mock-1", conversaId: "nao-e-uuid" })).status).toBe(400);
+    expect((await lerConversa({ imovelId: "mock-1", conversaId: crypto.randomUUID() })).status).toBe(404);
+    const doutro = await obterRepositorio().criarConversa("mock-2");
+    expect((await lerConversa({ imovelId: "mock-1", conversaId: doutro })).status).toBe(404);
   });
 });

@@ -29,8 +29,12 @@ export type ConversaPainel = {
   criadaEm: Date;
   atualizadaEm: Date;
   totalMensagens: number;
+  /** Texto da última mensagem (do comprador ou do atendente). */
+  ultimaMensagem: string | null;
   transferida: boolean;
   motivoTransferencia: string | null;
+  /** Transferida e ainda não lida pelo corretor (pede atenção). */
+  naoLida: boolean;
   lead: Lead | null;
   consentimentoEm: Date | null;
   visita: { id: string; status: StatusVisita; dataHora: Date } | null;
@@ -97,6 +101,7 @@ export async function alterarStatusVisita(corretorId: string, visitaId: string, 
 function paraConversaPainel(c: ConversaMock, titulo: string): ConversaPainel {
   const { visitas, historicos } = estadoAtendimentoMock();
   const visita = c.visitaId ? visitas.find((v) => v.id === c.visitaId) : undefined;
+  const textos = (historicos.get(c.id) ?? []).map((m) => textoDaMensagem(m.content)).filter(Boolean);
   return {
     id: c.id,
     imovelId: c.imovelId,
@@ -104,8 +109,10 @@ function paraConversaPainel(c: ConversaMock, titulo: string): ConversaPainel {
     criadaEm: c.criadaEm,
     atualizadaEm: c.atualizadaEm,
     totalMensagens: (historicos.get(c.id) ?? []).filter((m) => m.role === "user" && textoDaMensagem(m.content)).length,
+    ultimaMensagem: textos[textos.length - 1] ?? null,
     transferida: c.transferida,
     motivoTransferencia: c.motivo,
+    naoLida: c.transferida && c.lidaEm === null,
     lead: c.consentimento ? c.lead : null, // RN-11: dado pessoal só depois do consentimento
     consentimentoEm: c.consentimentoEm,
     visita: visita ? { id: visita.id, status: visita.status, dataHora: visita.dataHora } : null,
@@ -210,4 +217,18 @@ export async function listarClientes(corretorId: string): Promise<ClientePainel[
 
 export async function buscarCliente(corretorId: string, clienteId: string): Promise<ClientePainel | null> {
   return (await listarClientes(corretorId)).find((c) => c.id === clienteId) ?? null;
+}
+
+// --- Conversas transferidas: lida / não lida ---------------------------------------
+
+export async function marcarConversaLida(corretorId: string, conversaId: string): Promise<Resultado> {
+  const titulos = titulosDoCorretor(corretorId);
+  const c = estadoAtendimentoMock().conversas.get(conversaId);
+  if (!c || !titulos.has(c.imovelId)) return { ok: false, erro: "Conversa não encontrada." };
+  c.lidaEm = new Date();
+  return { ok: true };
+}
+
+export async function contarNaoLidas(corretorId: string): Promise<number> {
+  return (await listarConversas(corretorId)).filter((c) => c.naoLida).length;
 }

@@ -6,3 +6,6 @@ export const SUGESTOES_INICIAIS = ["Aceita financiamento?", "Qual o condomínio?
 export function textoSaudacao(corretor: string): string {
   return `Oi! Sou o assistente virtual de ${corretor}. Posso tirar dúvidas sobre este imóvel e ajudar a agendar uma visita. Como posso ajudar?`;
 }
+
+/** Botões de consentimento mostrados pela bolha (pages.md §4.1). O texto vira a mensagem do comprador. */
+export const BOTOES_CONSENTIMENTO = ["Pode guardar", "Prefiro não"];

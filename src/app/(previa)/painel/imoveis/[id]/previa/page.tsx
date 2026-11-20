@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { FaixaPrevia } from "@/components/imovel/FaixaPrevia";
 import { PaginaImovel } from "@/components/imovel/PaginaImovel";
 import { imovelParaPagina } from "@/lib/imoveis";
 import { buscarImovel } from "@/lib/painel/imoveis";
+import { buscarPerfil, perfilCompleto } from "@/lib/painel/perfil";
+import { faltaParaPublicar } from "@/lib/painel/regras";
 import { exigirCorretor } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Pré-visualização — Showing", robots: { index: false } };
@@ -13,10 +16,12 @@ export default async function PreviaPage({ params }: PageProps<"/painel/imoveis/
   const imovel = await buscarImovel(corretor.id, id);
   if (!imovel) notFound();
 
-  const aviso =
-    imovel.status === "rascunho"
-      ? "Pré-visualização: esta página ainda não está publicada."
-      : "Pré-visualização do que o comprador vê.";
+  const podePublicar = faltaParaPublicar(imovel).length === 0 && perfilCompleto(await buscarPerfil(corretor.id));
 
-  return <PaginaImovel imovel={imovelParaPagina(imovel)} aviso={aviso} />;
+  return (
+    <PaginaImovel
+      imovel={imovelParaPagina(imovel)}
+      faixa={<FaixaPrevia imovelId={imovel.id} rascunho={imovel.status === "rascunho"} podePublicar={podePublicar} />}
+    />
+  );
 }
