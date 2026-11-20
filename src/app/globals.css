@@ -128,119 +128,9 @@
     @apply font-heading tracking-tight;
   }
 }
-/* ==========================================================================
-   História "Como funciona" (docs/identidade-visual.md)
-   Sem JavaScript ou com "reduzir movimento" é uma sequência normal de seções.
-   Com [data-ativo] (posto por HistoriaScroll) vira uma cena fixa, e o movimento
-   é calculado aqui a partir de --sp (progresso de 0 a 1).
-   ========================================================================== */
-.historia {
-  --sp: 0;
-  background: var(--brand-deep);
-  color: #fff;
-}
-
-.historia-palco {
-  position: relative;
-  overflow: hidden;
-  isolation: isolate;
-}
-
-.historia-fundo {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background:
-    radial-gradient(60% 50% at 50% 30%, color-mix(in oklab, var(--brand-glow) 45%, transparent), transparent 70%),
-    radial-gradient(45% 40% at 85% 85%, color-mix(in oklab, var(--cta) 30%, transparent), transparent 70%),
-    linear-gradient(180deg, var(--brand-moss) -40%, var(--brand-deep) 70%);
-}
-
-.historia .beat {
-  padding: 3rem 1rem;
-}
-
-.historia-progresso {
-  display: none;
-}
-
-/* ---- Modo cena fixa ---- */
-.historia[data-ativo] {
-  height: 400vh;
-}
-
-.historia[data-ativo] .historia-palco {
-  position: sticky;
-  top: 0;
-  height: 100svh;
-}
-
-.historia[data-ativo] .beat {
-  --entra: clamp(0, calc((var(--sp) - var(--a)) / (var(--b) - var(--a))), 1);
-  --sai: clamp(0, calc((var(--sp) - var(--c)) / (var(--d) - var(--c))), 1);
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem 1rem;
-  pointer-events: none;
-  opacity: calc(var(--entra) * (1 - var(--sai)));
-  transform: translate3d(0, calc((1 - var(--entra)) * 36px - var(--sai) * 36px), 0);
-  will-change: transform, opacity;
-}
-
-.historia[data-ativo] .beat > * {
-  pointer-events: auto;
-}
-
-/* Janelas de cada cena; uma sai por completo antes da próxima entrar. */
-.historia[data-ativo] [data-beat="pagina"] { --a: -1; --b: 0; --c: 0.27; --d: 0.33; }
-.historia[data-ativo] [data-beat="atendente"] { --a: 0.37; --b: 0.43; --c: 0.62; --d: 0.68; }
-.historia[data-ativo] [data-beat="visita"] { --a: 0.73; --b: 0.79; --c: 2; --d: 3; }
-
-/* Cena fora de vista não recebe foco nem é lida como visível. */
-.historia[data-ativo]:not([data-fase="pagina"]) [data-beat="pagina"],
-.historia[data-ativo]:not([data-fase="atendente"]) [data-beat="atendente"],
-.historia[data-ativo]:not([data-fase="visita"]) [data-beat="visita"] {
-  visibility: hidden;
-}
-
-/* Falas do chat e linhas do resumo entram uma a uma, presas à rolagem. */
-.historia[data-ativo] [data-beat="atendente"] .msg {
-  --m: clamp(0, calc((var(--sp) - 0.44 - var(--i) * 0.04) / 0.03), 1);
-  opacity: var(--m);
-  transform: translate3d(0, calc((1 - var(--m)) * 12px), 0);
-}
-.historia[data-ativo] [data-beat="visita"] .msg {
-  --m: clamp(0, calc((var(--sp) - 0.8 - var(--i) * 0.025) / 0.02), 1);
-  opacity: var(--m);
-  transform: translate3d(0, calc((1 - var(--m)) * 8px), 0);
-}
-
-.historia[data-ativo] .historia-progresso {
-  display: block;
-  position: absolute;
-  left: 50%;
-  bottom: 18px;
-  width: 120px;
-  height: 2px;
-  translate: -50% 0;
-  border-radius: 2px;
-  background: rgb(255 255 255 / 0.2);
-}
-.historia[data-ativo] .historia-progresso::after {
-  content: "";
-  display: block;
-  height: 100%;
-  border-radius: 2px;
-  background: var(--cta);
-  transform: scaleX(var(--sp));
-  transform-origin: left;
-}
-
 /* ---------- Telas de login (/login e /login/verificar), do design "Tela de login do Showing" ---------- */
-.auth-tema {
+.auth-tema,
+.tema-marca {
   --auth-surface: #ffffff;
   --auth-muted: #eef1f0;
   --auth-ink: #111816;
@@ -255,6 +145,9 @@
   --auth-danger: #b42318;
   --auth-success-bg: #e3f4ec;
   --auth-success-ink: #0b5a3b;
+  --auth-claro: #f6f7f6;
+  --auth-escuro: #111816;
+  --auth-fundo-quente: #fff4e0;
 }
 
 @keyframes auth-respira {
@@ -276,4 +169,22 @@
 
 @media (prefers-reduced-motion: reduce) {
   .auth-cena, .auth-cartao, .auth-entra { animation: none; }
+}
+
+/* ---------- Página de vendas (/): animações do design ---------- */
+@keyframes lp-flutua { from { transform: translateY(0); } to { transform: translateY(-10px); } }
+@keyframes lp-pulsa { 0% { box-shadow: 0 0 0 0 rgba(11, 90, 59, 0.45); } 100% { box-shadow: 0 0 0 10px rgba(11, 90, 59, 0); } }
+@keyframes lp-deriva { from { transform: translate(0, 0) scale(1); } to { transform: translate(36px, -24px) scale(1.08); } }
+@keyframes lp-pisca { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+.lp-flutua { animation: lp-flutua 4.5s ease-in-out infinite alternate; }
+.lp-pulsa { animation: lp-pulsa 1.8s ease-out infinite; }
+.lp-deriva { animation: lp-deriva 14s ease-in-out infinite alternate; }
+.lp-pisca { animation: lp-pisca 1s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .lp-flutua, .lp-pulsa, .lp-deriva, .lp-pisca { animation: none; }
+}
+
+/* Rolagem suave nos links de âncora, só para quem não pediu menos movimento. */
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
 }

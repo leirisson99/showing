@@ -6,6 +6,7 @@ import { rotasComId, TODAS_AS_ROTAS } from "./rotas";
 // O axe cobre só parte do que importa: foco, teclado e leitores de tela seguem em revisão manual.
 async function varrer(page: import("@playwright/test").Page, caminho: string) {
   await page.goto(caminho, { waitUntil: "networkidle" });
+  await page.waitForTimeout(1500); // deixa as animações de entrada terminarem (a página inicial escreve o título)
   const { violations } = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
   const graves = violations.filter((v) => v.impact === "serious" || v.impact === "critical");
   const resumo = graves.map((v) => `${v.id} (${v.impact}): ${v.help} → ${v.nodes.slice(0, 3).map((n) => n.target.join(" ")).join(" | ")}`);

@@ -56,6 +56,10 @@ export default function PrivacidadePage() {
             ]}
           />
           <p>Nome e contato só são guardados depois que você aceita, na própria conversa. Se disser que não, não guardamos.</p>
+          <p>
+            Se você é corretor e deixa o seu e-mail na página inicial para participar do piloto, guardamos só esse e-mail, para falar com você
+            sobre o piloto. Você pode pedir para apagá-lo a qualquer momento.
+          </p>
         </>
       ),
     },

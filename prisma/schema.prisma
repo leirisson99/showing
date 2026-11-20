@@ -234,3 +234,11 @@ model UsoIA {
 
   @@index([criadoEm])
 }
+
+// Corretor que deixou o e-mail na página inicial para falar sobre o piloto (BK-11). Só o e-mail:
+// nada além disso é pedido. Guardado até o fim do piloto ou até a pessoa pedir a exclusão.
+model InteressePiloto {
+  id       String   @id @default(cuid())
+  email    String   @unique
+  criadoEm DateTime @default(now())
+}
