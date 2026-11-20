@@ -24,7 +24,7 @@ Os modelos são referência de estilo: nada deles (nome, textos, imagens) é rep
 
 ## Logotipo
 
-- **Marca:** balão de conversa verde-floresta com uma casa branca e a porta em ouro. Código em `src/components/brand/Logo.tsx` (`LogoMarca` e `Logo`); a mesma arte está em `src/app/icon.svg` (favicon).
+- **Marca:** duas bolhas de conversa (opção B do arquivo `logo/Logo.png`): a de cima verde-azulada escura (branca sobre fundo escuro), a de baixo laranja `#F2A65A`; nome em Manrope extrabold. Código em `src/components/brand/Logo.tsx` (`LogoMarca` e `Logo`); ícone do app em `src/app/icon.svg` (fundo `#123C3C`).
 - **Assinatura:** marca + "Showing" em Cormorant Garamond 600.
 - **Cores:** sobre fundo claro, balão em `--primary`; sobre fundo escuro, branco (herda `currentColor`). A porta é sempre `#C9A66B`.
 - **Área de respiro:** pelo menos a largura da porta em todos os lados. **Tamanho mínimo:** marca sozinha 16 px; assinatura 96 px de largura.
