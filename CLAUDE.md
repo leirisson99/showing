@@ -19,7 +19,7 @@ PostgreSQL + Prisma
 Auth.js (link mágico por e-mail) — só para o corretor; o comprador não faz login
 Strands Agents TypeScript SDK (@strands-agents/sdk) para o atendente: agente, tools com Zod e streaming via agent.stream(). Um agente novo por requisição, com o histórico carregado do banco; nada de agente em memória global
 Appwrite Storage para fotos, acessado só no servidor com node-appwrite (a chave de API nunca vai para o cliente). O banco guarda o fileId, não a URL; a URL é montada em src/lib/storage.ts
-Nodemailer + SMTP para e-mails (templates com React Email, renderizados com render()); configuração só via variáveis SMTP_*
+Nodemailer + Gmail (senha de app) para e-mails (templates com React Email, renderizados com render()); configuração só via variáveis EMAIL_USER, EMAIL_APP_PASSWORD e EMAIL_FROM_NAME
 pnpm
 Comandos
 bash

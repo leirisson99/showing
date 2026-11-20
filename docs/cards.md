@@ -123,7 +123,7 @@ Ordem sugerida: **Fase A** (autenticação mínima) → **Fase B** (cadastro e p
 - **Regras:**
   - RN-21: o corretor recebe resumo (comprador, contato, pagamento, prazo, horário, perguntas pendentes); o comprador recebe confirmação do pedido se informou e-mail.
   - RNF-20: a visita é salva primeiro; falha no e-mail não perde a visita e o envio é tentado de novo.
-  - Só variáveis `SMTP_*`; textos em português.
+  - Só variáveis `EMAIL_*`; textos em português.
 - **Pronto quando:** pedir uma visita dispara os dois e-mails com os dados corretos.
 
 #### C6 · Casos de teste do atendente — A FAZER · M

@@ -9,7 +9,7 @@ import { LinkDeAcesso } from "@/emails/link-de-acesso";
 
 const MINUTOS_DE_VALIDADE = 15;
 
-// Provider de e-mail próprio: o envio passa por src/lib/email.ts (SMTP_*).
+// Provider de e-mail próprio: o envio passa por src/lib/email.ts (EMAIL_*, Gmail).
 const linkMagico: EmailConfig = {
   id: "email",
   type: "email",

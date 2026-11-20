@@ -67,7 +67,7 @@ Corretor recebe resumo ← Visita pedida ← Atendente IA responde e qualifica �
 | Autenticação | Auth.js (link mágico por e-mail) |
 | IA | Strands Agents TypeScript SDK (`@strands-agents/sdk`) + modelo com tool calling (Bedrock, Anthropic ou OpenAI) |
 | Armazenamento de fotos | Appwrite Storage (Appwrite Cloud) |
-| E-mail | Nodemailer + SMTP (Gmail/Google Workspace, Zoho, Amazon SES ou SMTP da hospedagem) |
+| E-mail | Nodemailer + Gmail (senha de app) |
 | Analytics | Umami ou Plausible |
 | Deploy | Vercel, Railway ou VPS com Docker |
 
@@ -170,11 +170,9 @@ Acesse:
 | `APPWRITE_PROJECT_ID` | Id do projeto no Appwrite |
 | `APPWRITE_API_KEY` | Chave de API com escopo `files.read` e `files.write` (só no servidor) |
 | `APPWRITE_BUCKET_ID` | Id do bucket das fotos |
-| `SMTP_HOST` | Servidor SMTP (ex.: `smtp.gmail.com`) |
-| `SMTP_PORT` | Porta SMTP (`465` com SSL ou `587` com STARTTLS) |
-| `SMTP_USER` | Usuário SMTP |
-| `SMTP_PASS` | Senha SMTP (no Gmail, uma senha de app) |
-| `EMAIL_FROM` | Remetente dos e-mails |
+| `EMAIL_USER` | Conta Gmail que envia os e-mails |
+| `EMAIL_APP_PASSWORD` | Senha de app do Google (exige verificação em duas etapas) |
+| `EMAIL_FROM_NAME` | Nome do remetente (ex.: `Showing`) |
 | `NEXT_PUBLIC_SITE_URL` | URL pública do site (usada em SEO e links) |
 
 Nunca faça commit do arquivo `.env`.
