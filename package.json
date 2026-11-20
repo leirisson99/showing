@@ -13,6 +13,7 @@
     "test:e2e:capturas": "playwright test capturas",
     "env:check": "tsx scripts/verificar-ambiente.ts",
     "retencao": "tsx scripts/retencao.ts",
+    "custo": "tsx scripts/custo-ia.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {

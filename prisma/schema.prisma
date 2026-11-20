@@ -220,3 +220,17 @@ model Evento {
   @@index([imovelId, tipo])
   @@index([imovelId, criadoEm])
 }
+
+// Uso do modelo de IA, para acompanhar o custo toda semana (BK-09). Só contagens: nenhum texto,
+// nome ou contato. Sem relação com Conversa de propósito: apagar a conversa não apaga o gasto.
+model UsoIA {
+  id            String   @id @default(cuid())
+  tipo          String // "chat" ou "descricao"
+  modelo        String
+  imovelId      String?
+  entradaTokens Int      @default(0)
+  saidaTokens   Int      @default(0)
+  criadoEm      DateTime @default(now())
+
+  @@index([criadoEm])
+}

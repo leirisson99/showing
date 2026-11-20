@@ -23,7 +23,7 @@ Tudo o que falta para tirar o Showing dos dados de exemplo (`USAR_MOCKS=1`) e co
 | BK-06 Fotos no Appwrite | M | PARCIAL | BK-03 |
 | BK-07 E-mails de visita e transferência (C5) | M | PRONTO | BK-04 |
 | BK-08 Privacidade e LGPD no backend | M | PRONTO | BK-04 |
-| BK-09 Atendente em produção (modelo e custo) | M | A FAZER | BK-04 |
+| BK-09 Atendente em produção (modelo e custo) | M | PARCIAL | BK-04 |
 | BK-10 Deploy e qualidade (E3) | M | A FAZER | todos |
 
 Ordem sugerida: BK-01 → BK-03 → BK-04 → BK-06 → BK-07 → BK-02 → BK-05 → BK-08 → BK-09 → BK-10.
@@ -131,12 +131,20 @@ As 4 tools passaram a seguir o spec: `consultar_horarios` (até 6 horários com 
 - **Prompt, bolha e rota:** prompt reescrito (inclui o que fazer quando o comprador "autoriza" digitando), a rota mostra os botões também quando o atendente pede o toque, e `contato_capturado` é contado uma vez por conversa. `maxTokens` 3000 e `reasoning: low` (OpenRouter), porque o modelo atual estourava o limite só raciocinando e devolvia resposta vazia.
 - **Testes:** 152 unitários e de integração; **8 casos ao vivo passaram duas vezes seguidas**, incluindo o fluxo completo (horários → aceite pelo botão → visita pedida) e o de horário inventado.
 
-## BK-09 · Atendente em produção (modelo e custo) — M
+## BK-09 · Atendente em produção (modelo e custo) — PARCIAL (2026-11-20)
 
-- Escolher o modelo (`AI_MODEL`) e fixar o provedor (`AI_BASE_URL`, OpenRouter hoje); acompanhar o custo toda semana.
-- Limite de taxa (RNF-10) hoje é em memória e vale para uma instância: mover para o banco ou um armazenamento compartilhado se houver mais de uma.
-- Rodar `pnpm vitest run atendente.live` depois do consentimento "Pode guardar / Prefiro não" e antes de cada mudança no prompt (custa tokens).
-- Trocar a geração de título e descrição (`src/lib/ai/descricao.ts`, hoje um texto fixo) pela chamada ao modelo, com a mesma entrada e saída (RN-06: nada é publicado sozinho).
+**Feito**
+- **Medição de gasto:** tabela `UsoIA` (migration `20261120131902_uso_ia`) com tipo (`chat` ou `descricao`), modelo, imóvel e **só contagens de tokens**, sem texto nem dado pessoal; cada resposta do atendente e cada descrição gerada registram o uso (`src/lib/ai/uso.ts`). Uma falha ao registrar nunca derruba a conversa.
+- **`pnpm custo [dias]`:** relatório semanal (mensagens, descrições, tokens de entrada e saída, US$ estimado e média por mensagem). Para o valor em dólar, preencha `AI_PRECO_ENTRADA` e `AI_PRECO_SAIDA` (US$ por 1 milhão de tokens, em openrouter.ai/models).
+- **Teto diário:** `AI_LIMITE_DIARIO` (padrão **300 mensagens** do atendente nas últimas 24 h). Passou do teto, a rota responde 503 e a bolha cai no atendente simulado, sem chamar o modelo.
+- **Título e descrição pelo modelo:** `gerarTituloEDescricao` chama a IA (JSON validado com Zod) e **só aceita o texto se todo número estiver na ficha e não houver preço**; se a IA falhar, vier fora do formato ou inventar algo, usa o texto padrão da ficha (RN-06: continua rascunho editável). Testado com modelo falso (inclui invenção de quartos, área e preço) e uma vez com o modelo real.
+- **Número real medido** (modelo atual, 3 mensagens de uma conversa): entrada de 2.200 a 5.300 tokens e saída de 150 a 400 por mensagem, porque o prompt com a ficha vai a cada chamada e o histórico cresce. Com o teto de 300 mensagens por dia, o pior caso é da ordem de 1,5 milhão de tokens de entrada por dia; multiplique pelo preço do modelo escolhido.
+- 160 testes, `typecheck`, `lint` e `build` passam.
+
+**Falta**
+- **Reiniciar o `pnpm dev`:** o cliente do Prisma foi regenerado com a tabela nova e o servidor aberto ainda não a enxerga (o uso só passa a ser gravado depois do restart).
+- **Decisão sua: modelo e preço.** O modelo atual é `google/gemini-4-neon`; para trocar, compare custo e qualidade rodando `pnpm vitest run atendente.live` com cada `AI_MODEL`, e preencha `AI_PRECO_*` para o relatório mostrar o gasto. Revisar o relatório toda semana do piloto.
+- **Limite por minuto (RNF-10) continua em memória**, uma instância só. Com hospedagem que sobe várias instâncias (serverless), o teto diário protege o orçamento mesmo assim, mas o limite por IP precisa de armazenamento compartilhado: decidir no BK-10.
 
 ## BK-10 · Deploy e qualidade (E3) — M
 

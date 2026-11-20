@@ -7,6 +7,7 @@ import { LIMITE_MENSAGENS_COMPRADOR, LIMITE_POR_MINUTO } from "@/lib/ai/limites"
 import { BOTOES_CONSENTIMENTO } from "@/lib/ai/saudacao";
 import { iaConfigurada } from "@/lib/ai/modelo";
 import { avisarTransferencia, avisarVisitaPedida, disparar, notificacoesAtivas } from "@/lib/notificacoes";
+import { limiteDiarioAtingido, registrarUso } from "@/lib/ai/uso";
 import { obterRepositorio } from "@/lib/ai/repositorio-atual";
 import { buscarImovelPublicoPorId } from "@/lib/imoveis";
 import { registrarEvento } from "@/lib/painel/metricas";
@@ -82,6 +83,8 @@ export async function POST(request: Request) {
   const { imovelId, mensagem } = entrada.data;
 
   if (!iaConfigurada()) return erro("ia_indisponivel", 503);
+  // Orçamento do dia: passou do limite, a bolha cai no atendente simulado (mesmo caminho de "sem IA").
+  if (await limiteDiarioAtingido()) return erro("ia_indisponivel", 503, { motivo: "limite_diario" });
 
   if (!dentroDoLimite(`ip:${ipDe(request)}`, LIMITE_POR_MINUTO, UM_MINUTO)) return erro("muitas_mensagens", 429);
   if (entrada.data.conversaId && !dentroDoLimite(`conversa:${entrada.data.conversaId}`, LIMITE_POR_MINUTO, UM_MINUTO)) {
@@ -173,7 +176,10 @@ export async function POST(request: Request) {
           },
         });
 
-        for await (const ev of agente.stream(mensagem)) {
+        const execucao = agente.stream(mensagem);
+        let passo = await execucao.next();
+        for (; !passo.done; passo = await execucao.next()) {
+          const ev = passo.value;
           if (
             ev.type === "modelStreamUpdateEvent" &&
             ev.event.type === "modelContentBlockDeltaEvent" &&
@@ -183,6 +189,10 @@ export async function POST(request: Request) {
             enviar({ tipo: "texto", texto: ev.event.delta.text });
           }
         }
+
+        // Gasto do modelo: só a contagem de tokens (BK-09).
+        const uso = passo.value.metrics?.accumulatedUsage;
+        void registrarUso("chat", { entrada: uso?.inputTokens ?? 0, saida: uso?.outputTokens ?? 0 }, imovel.id);
 
         await repo.salvarMensagens(idDaConversa, agente.messages.map((m) => m.toJSON()));
 

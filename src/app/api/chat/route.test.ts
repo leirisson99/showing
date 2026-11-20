@@ -11,6 +11,12 @@ vi.mock("@/lib/ai/modelo", () => ({
   criarModelo: () => estado.modelo,
 }));
 
+const uso = vi.hoisted(() => ({ atingido: false, registros: [] as unknown[] }));
+vi.mock("@/lib/ai/uso", () => ({
+  limiteDiarioAtingido: async () => uso.atingido,
+  registrarUso: async (...args: unknown[]) => void uso.registros.push(args),
+}));
+
 import { GET, POST } from "./route";
 
 class ModeloFalso extends Model {
@@ -65,6 +71,8 @@ async function chamar(corpo: unknown, cabecalhos: Record<string, string> = {}) {
 const falaDoComprador = (m: string) => ({ role: "user" as const, content: [{ text: m }] });
 
 beforeEach(() => {
+  uso.atingido = false;
+  uso.registros.length = 0;
   ip++;
   estado.configurada = true;
   estado.modelo = new ModeloFalso([resposta("Oi!")]);
@@ -278,5 +286,27 @@ describe("GET /api/chat (retomar a conversa)", () => {
     expect((await lerConversa({ imovelId: "mock-1", conversaId: crypto.randomUUID() })).status).toBe(404);
     const doutro = await obterRepositorio().criarConversa("mock-2");
     expect((await lerConversa({ imovelId: "mock-1", conversaId: doutro })).status).toBe(404);
+  });
+});
+
+describe("POST /api/chat: orçamento do modelo (BK-09)", () => {
+  it("passou do limite diário: 503 para a bolha cair no atendente simulado, sem chamar o modelo", async () => {
+    uso.atingido = true;
+    const modelo = new ModeloFalso([resposta("não deveria responder")]);
+    estado.modelo = modelo;
+    const r = await chamar({ imovelId: "mock-1", mensagem: "Oi" });
+    expect(r.status).toBe(503);
+    expect(r.json).toMatchObject({ erro: "ia_indisponivel", motivo: "limite_diario" });
+    expect(modelo.recebidas).toHaveLength(0);
+  });
+
+  it("cada resposta registra o uso com o imóvel e só números (sem texto)", async () => {
+    await chamar({ imovelId: "mock-1", mensagem: "Qual o valor? Meu e-mail é maria@exemplo.com" });
+    expect(uso.registros).toHaveLength(1);
+    const [tipo, tokens, imovelId] = uso.registros[0] as [string, { entrada: number; saida: number }, string];
+    expect(tipo).toBe("chat");
+    expect(imovelId).toBe("mock-1");
+    expect(Object.keys(tokens).sort()).toEqual(["entrada", "saida"]);
+    expect(JSON.stringify(uso.registros)).not.toContain("maria@exemplo.com");
   });
 });
