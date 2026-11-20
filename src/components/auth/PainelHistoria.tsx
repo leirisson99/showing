@@ -7,7 +7,7 @@ import { LogoMarca } from "@/components/brand/Logo";
 import { cn } from "@/lib/utils";
 import { UNSPLASH, urlUnsplash } from "@/mocks/unsplash";
 
-const INTERVALO_MS = 6000;
+const INTERVALO_MS = 2000;
 
 const FRASES = [
   "Enquanto você mostra um imóvel, o outro já está atendendo.",
@@ -59,7 +59,7 @@ function Cartao({ indice }: { indice: number }) {
 }
 
 // Lado esquerdo das telas de login: a história do produto em 3 mensagens. Avança sozinho a cada
-// 6 s; pausa com o mouse, com o foco dentro do painel e com a aba escondida; não avança com
+// 2 s; pausa com o mouse, com o foco dentro do painel e com a aba escondida; não avança com
 // movimento reduzido (os pontos continuam trocando).
 export function PainelHistoria() {
   const [atual, setAtual] = useState(0);
