@@ -99,7 +99,7 @@ export function PaginaImovel({ imovel, faixa }: Props) {
             { href: "#sobre", rotulo: "Sobre" },
             { href: "#ficha", rotulo: "Ficha técnica" },
             { href: "#duvidas", rotulo: "Dúvidas" },
-            { href: "#galeria", rotulo: "Galeria" },
+            ...(imovel.fotos.length > 0 ? [{ href: "#galeria", rotulo: "Galeria" }] : []),
           ]}
           acao={
             vendido ? undefined : (
@@ -255,10 +255,12 @@ export function PaginaImovel({ imovel, faixa }: Props) {
           {imovel.infoBairro && <InfoBairro info={imovel.infoBairro} bairro={imovel.bairro} />}
         </section>
 
-        <section id="galeria" className={cn(secao, "flex flex-col gap-6 pt-0")}>
-          <h2 className={titulo2}>Galeria do imóvel</h2>
-          <GaleriaGrade fotos={imovel.fotos} />
-        </section>
+        {imovel.fotos.length > 0 && (
+          <section id="galeria" className={cn(secao, "flex flex-col gap-6 pt-0")}>
+            <h2 className={titulo2}>Galeria do imóvel</h2>
+            <GaleriaGrade fotos={imovel.fotos} />
+          </section>
+        )}
       </main>
 
       <FaixaChamada

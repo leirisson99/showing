@@ -17,6 +17,9 @@ export function GaleriaGrade({ fotos }: { fotos: FotoPublica[] }) {
   const anterior = () => setAtual((i) => (i - 1 + total) % total);
   const proxima = () => setAtual((i) => (i + 1) % total);
 
+  // Imóvel ainda sem fotos (rascunho na pré-visualização): nada a mostrar.
+  if (total === 0) return null;
+
   return (
     <>
       <ul className="grid grid-cols-2 gap-3 md:grid-cols-4">
