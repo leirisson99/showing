@@ -174,7 +174,7 @@ Texto do botão diz o que acontece ("Publicar imóvel"), nunca "OK" ou "Enviar" 
 | Rota | Acesso | Página |
 | --- | --- | --- |
 | `/imovel/[slug]` | Pública | Página do imóvel |
-| `/privacidade` | Pública | Política de privacidade |
+| `/privacidade` | Pública | Política de privacidade (feita) |
 | `/` | Pública | Página inicial simples da POC |
 | `/login` | Pública | Login do corretor |
 | `/login/verificar` | Pública | Aviso "veja seu e-mail" |

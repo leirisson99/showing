@@ -117,7 +117,7 @@ export function ListaClientes({ itens }: { itens: ItemCliente[] }) {
                 </span>
                 {c.visita && <span>Visita: {c.visita.quando}</span>}
                 <span>Última atividade: {c.ultimaAtividade}</span>
-                {c.transferida && <span className="font-medium text-[#7A4A00]">Esperando resposta sua</span>}
+                {c.transferida && <span className="font-medium text-aviso">Esperando resposta sua</span>}
               </div>
             </li>
           ))}

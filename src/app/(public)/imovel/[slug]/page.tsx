@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PaginaImovel } from "@/components/imovel/PaginaImovel";
 import { buscarImovelPublico, listarSlugsPublicos } from "@/lib/imoveis";
-import { urlDoImovel } from "@/lib/seo";
+import { jsonLdImovel, serializarJsonLd, urlDoImovel } from "@/lib/seo";
 
 export async function generateStaticParams() {
   const slugs = await listarSlugsPublicos();
@@ -40,5 +40,10 @@ export default async function ImovelPage({ params }: PageProps<"/imovel/[slug]">
   const imovel = await buscarImovelPublico(slug);
   if (!imovel) notFound();
 
-  return <PaginaImovel imovel={imovel} />;
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializarJsonLd(jsonLdImovel(imovel)) }} />
+      <PaginaImovel imovel={imovel} />
+    </>
+  );
 }

@@ -51,7 +51,7 @@ export default async function PainelPage() {
       />
 
       {!perfilOk && (
-        <p role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-[#FFF4E0] p-4 text-[#7A4A00]">
+        <p role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-aviso-bg p-4 text-aviso">
           <span>Complete seu perfil (nome e CRECI) para poder publicar imóveis.</span>
           <Link href="/painel/perfil" className={botaoEscuro}>
             Completar perfil

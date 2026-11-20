@@ -111,7 +111,7 @@ export function PaginaImovel({ imovel, faixa }: Props) {
         />
 
         <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center gap-5 px-5 pt-32 pb-36">
-          <p className="text-sm font-semibold tracking-wide text-[#C9A66B] uppercase">
+          <p className="text-sm font-semibold tracking-wide text-ouro uppercase">
             {tipo} · {imovel.bairro}
           </p>
           <h1 className="max-w-2xl text-4xl leading-[1.05] font-medium text-balance md:text-6xl">{imovel.titulo}</h1>
@@ -133,7 +133,7 @@ export function PaginaImovel({ imovel, faixa }: Props) {
             </div>
           )}
           <div className="mt-2 flex items-center gap-3">
-            <span className="flex size-12 items-center justify-center rounded-full bg-[#C9A66B] text-deep">
+            <span className="flex size-12 items-center justify-center rounded-full bg-ouro text-deep">
               <LogoMarca className="size-7" />
             </span>
             <p className="text-sm leading-snug text-white/85">

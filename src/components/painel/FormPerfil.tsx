@@ -78,8 +78,8 @@ export function FormPerfil({ valores, fotoSrc, email }: Props) {
 
   return (
     <form onSubmit={salvar} noValidate className="flex flex-col gap-10">
-      <FieldSet>
-        <FieldLegend>Seus dados</FieldLegend>
+      <FieldSet className="rounded-3xl bg-card p-6 ring-1 ring-foreground/10">
+        <FieldLegend className="text-xl font-medium">Seus dados</FieldLegend>
         <p className="text-sm text-muted-foreground">Nome, CRECI, WhatsApp e foto aparecem na página pública dos seus imóveis.</p>
 
         <div className="flex items-center gap-4">
@@ -128,8 +128,8 @@ export function FormPerfil({ valores, fotoSrc, email }: Props) {
         </FieldGroup>
       </FieldSet>
 
-      <FieldSet>
-        <FieldLegend>Horários de visita</FieldLegend>
+      <FieldSet className="rounded-3xl bg-card p-6 ring-1 ring-foreground/10">
+        <FieldLegend className="text-xl font-medium">Horários de visita</FieldLegend>
         <p className="text-sm text-muted-foreground">
           O atendente só oferece estes horários ao comprador, com pelo menos 12 horas de antecedência e até 14 dias à frente. Um horário
           ocupado por visita pedida ou confirmada deixa de ser oferecido.

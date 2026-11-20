@@ -12,9 +12,9 @@ export function MockPagina() {
   return (
     <figure className={cn(quadro, "w-full max-w-md overflow-hidden")} aria-label="Exemplo ilustrativo de página de imóvel">
       <div className="flex items-center gap-2 border-b bg-muted px-3 py-2">
-        <span className="size-2.5 rounded-full bg-[#DDE3E1]" aria-hidden />
-        <span className="size-2.5 rounded-full bg-[#DDE3E1]" aria-hidden />
-        <span className="size-2.5 rounded-full bg-[#DDE3E1]" aria-hidden />
+        <span className="size-2.5 rounded-full bg-border" aria-hidden />
+        <span className="size-2.5 rounded-full bg-border" aria-hidden />
+        <span className="size-2.5 rounded-full bg-border" aria-hidden />
         <span className="ml-2 min-w-0 flex-1 truncate rounded-md bg-white px-2 py-0.5 text-[11px] text-muted-foreground">
           /imovel/apartamento-2-quartos-victor-konder-blumenau
         </span>
@@ -99,7 +99,7 @@ export function MockEmail() {
     <figure className={cn(quadro, "w-full max-w-sm overflow-hidden")} aria-label="Exemplo ilustrativo do resumo enviado ao corretor">
       <div className="flex items-center justify-between border-b bg-muted px-4 py-3">
         <p className="font-heading text-sm font-semibold">Nova visita pedida</p>
-        <span className="rounded-full bg-[#FFF4E0] px-2.5 py-0.5 text-xs font-medium text-[#7A4A00]">Pedida</span>
+        <span className="rounded-full bg-aviso-bg px-2.5 py-0.5 text-xs font-medium text-aviso">Pedida</span>
       </div>
       <dl className="flex flex-col p-4 text-[15px]">
         {linhas.map(([rotulo, valor], i) => (

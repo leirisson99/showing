@@ -42,7 +42,7 @@ export default async function ConversaPage({ params }: PageProps<"/painel/conver
       />
 
       {conversa.transferida && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl bg-[#FFF4E0] p-5 text-[#7A4A00]">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl bg-aviso-bg p-5 text-aviso">
           <p className="flex items-start gap-2">
             <TriangleAlert className="mt-0.5 size-5 shrink-0" aria-hidden />
             <span>

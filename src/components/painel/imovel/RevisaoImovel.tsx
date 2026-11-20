@@ -42,13 +42,13 @@ export function RevisaoImovel({ id, valores: v, falta, perfilOk, rascunho, irPar
       <section aria-labelledby="requisitos" className="flex flex-col gap-3">
         <h3 id="requisitos" className="text-lg font-medium">Para publicar</h3>
         <ul className="flex flex-col gap-2 text-[15px]">
-          <li className="flex items-center gap-2"><Check className="size-4 text-[#0B5A3B]" aria-hidden /> Dados da ficha completos</li>
+          <li className="flex items-center gap-2"><Check className="size-4 text-ok" aria-hidden /> Dados da ficha completos</li>
           {falta.length === 0 ? (
-            <li className="flex items-center gap-2"><Check className="size-4 text-[#0B5A3B]" aria-hidden /> Fotos, título e descrição prontos</li>
+            <li className="flex items-center gap-2"><Check className="size-4 text-ok" aria-hidden /> Fotos, título e descrição prontos</li>
           ) : (
             falta.map((f) => (
               <li key={f} className="flex flex-wrap items-center gap-2">
-                <Circle className="size-4 text-[#7A4A00]" aria-hidden /> Falta: {f}
+                <Circle className="size-4 text-aviso" aria-hidden /> Falta: {f}
                 <button type="button" onClick={() => irParaAba(f.includes("foto") ? "fotos" : f.includes("título") || f.includes("descrição") ? "texto" : "dados")} className="min-h-11 text-sm underline underline-offset-4">
                   Ir para lá
                 </button>
@@ -56,10 +56,10 @@ export function RevisaoImovel({ id, valores: v, falta, perfilOk, rascunho, irPar
             ))
           )}
           {perfilOk ? (
-            <li className="flex items-center gap-2"><Check className="size-4 text-[#0B5A3B]" aria-hidden /> Perfil com nome e CRECI</li>
+            <li className="flex items-center gap-2"><Check className="size-4 text-ok" aria-hidden /> Perfil com nome e CRECI</li>
           ) : (
             <li className="flex flex-wrap items-center gap-2">
-              <Circle className="size-4 text-[#7A4A00]" aria-hidden /> Falta completar o perfil (nome e CRECI){" "}
+              <Circle className="size-4 text-aviso" aria-hidden /> Falta completar o perfil (nome e CRECI){" "}
               <Link href="/painel/perfil" className="min-h-11 text-sm underline underline-offset-4">Abrir perfil</Link>
             </li>
           )}

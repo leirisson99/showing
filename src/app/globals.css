@@ -13,6 +13,15 @@
   --color-moss: var(--brand-moss);
   --color-deep: var(--brand-deep);
   --color-sand: var(--brand-sand);
+  --color-ouro: var(--brand-ouro);
+  --color-ok: var(--status-ok-fg);
+  --color-ok-bg: var(--status-ok-bg);
+  --color-aviso: var(--status-aviso-fg);
+  --color-aviso-bg: var(--status-aviso-bg);
+  --color-info: var(--status-info-fg);
+  --color-info-bg: var(--status-info-bg);
+  --color-erro: var(--status-erro-fg);
+  --color-erro-bg: var(--status-erro-bg);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -91,6 +100,16 @@
   --brand-moss: #2d4a38;
   --brand-glow: #5c7f66;
   --brand-sand: #d9d5c6;
+  --brand-ouro: #c9a66b;
+  /* Cores de status (pages.md §2.2): publicado/confirmada, rascunho/pedida, vendido/realizada, cancelada */
+  --status-ok-bg: #e3f4ec;
+  --status-ok-fg: #0b5a3b;
+  --status-aviso-bg: #fff4e0;
+  --status-aviso-fg: #7a4a00;
+  --status-info-bg: #e8eef6;
+  --status-info-fg: #1f3a5f;
+  --status-erro-bg: #fdecea;
+  --status-erro-fg: #8a1c12;
 }
 
 @layer base {

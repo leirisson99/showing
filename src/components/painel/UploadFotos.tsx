@@ -68,7 +68,7 @@ export function UploadFotos({ imovelId, fotos }: { imovelId: string; fotos: Foto
           void enviar([...e.dataTransfer.files]);
         }}
         className={cn(
-          "flex flex-col items-center gap-3 rounded-xl border border-dashed p-6 text-center",
+          "flex flex-col items-center gap-3 rounded-3xl border border-dashed border-foreground/30 p-6 text-center",
           arrastando && "border-primary bg-muted",
         )}
       >
@@ -83,9 +83,21 @@ export function UploadFotos({ imovelId, fotos }: { imovelId: string; fotos: Foto
           className="sr-only"
           onChange={(e) => void enviar([...(e.target.files ?? [])])}
         />
-        <Button type="button" className="h-11" disabled={enviando !== null} onClick={() => entrada.current?.click()}>
+        <Button type="button" className="h-11 rounded-full px-6" disabled={enviando !== null} onClick={() => entrada.current?.click()}>
           {enviando ? `Enviando ${enviando.atual} de ${enviando.total}…` : "Escolher fotos"}
         </Button>
+        {enviando && (
+          <div
+            role="progressbar"
+            aria-label="Envio das fotos"
+            aria-valuemin={0}
+            aria-valuemax={enviando.total}
+            aria-valuenow={enviando.atual - 1}
+            className="h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-secondary"
+          >
+            <div className="h-full rounded-full bg-cta transition-[width] motion-reduce:transition-none" style={{ width: `${((enviando.atual - 1) / enviando.total) * 100}%` }} />
+          </div>
+        )}
       </div>
 
       <p className={cn("text-sm", fotos.length < FOTOS_MINIMAS ? "text-destructive" : "text-muted-foreground")}>
@@ -95,8 +107,8 @@ export function UploadFotos({ imovelId, fotos }: { imovelId: string; fotos: Foto
       {fotos.length > 0 && (
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {fotos.map((foto, i) => (
-            <li key={foto.id} className="flex flex-col gap-2 rounded-xl border bg-card p-3">
-              <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-muted">
+            <li key={foto.id} className="flex flex-col gap-2 rounded-3xl bg-card p-3 ring-1 ring-foreground/10">
+              <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-muted">
                 <Image src={foto.src} alt={foto.legenda ?? `Foto ${i + 1}`} fill sizes="(min-width: 1024px) 300px, 50vw" className="object-cover" />
                 {i === 0 && (
                   <span className="absolute top-2 left-2 rounded-full bg-primary px-2.5 py-0.5 text-xs font-medium text-primary-foreground">Capa</span>
@@ -108,7 +120,7 @@ export function UploadFotos({ imovelId, fotos }: { imovelId: string; fotos: Foto
                 placeholder="Legenda (vira o texto alternativo)"
                 maxLength={200}
                 defaultValue={foto.legenda ?? ""}
-                className="h-11"
+                className="h-11 rounded-xl"
                 onBlur={(e) => {
                   if (e.target.value.trim() !== (foto.legenda ?? "")) {
                     rodar(() => legendarFotoAction(imovelId, foto.id, e.target.value), "Legenda salva");
@@ -117,14 +129,14 @@ export function UploadFotos({ imovelId, fotos }: { imovelId: string; fotos: Foto
               />
               <div className="flex items-center justify-between">
                 <div className="flex gap-1">
-                  <Button type="button" variant="outline" size="icon" className="size-11" disabled={pendente || i === 0} aria-label={`Mover foto ${i + 1} para a esquerda`} onClick={() => rodar(() => moverFotoAction(imovelId, foto.id, -1), "Ordem atualizada")}>
+                  <Button type="button" variant="outline" size="icon" className="size-11 rounded-full" disabled={pendente || i === 0} aria-label={`Mover foto ${i + 1} para a esquerda`} onClick={() => rodar(() => moverFotoAction(imovelId, foto.id, -1), "Ordem atualizada")}>
                     <ArrowLeft />
                   </Button>
-                  <Button type="button" variant="outline" size="icon" className="size-11" disabled={pendente || i === fotos.length - 1} aria-label={`Mover foto ${i + 1} para a direita`} onClick={() => rodar(() => moverFotoAction(imovelId, foto.id, 1), "Ordem atualizada")}>
+                  <Button type="button" variant="outline" size="icon" className="size-11 rounded-full" disabled={pendente || i === fotos.length - 1} aria-label={`Mover foto ${i + 1} para a direita`} onClick={() => rodar(() => moverFotoAction(imovelId, foto.id, 1), "Ordem atualizada")}>
                     <ArrowRight />
                   </Button>
                 </div>
-                <Button type="button" variant="destructive" size="icon" className="size-11" disabled={pendente} aria-label={`Remover foto ${i + 1}`} onClick={() => rodar(() => removerFotoAction(imovelId, foto.id), "Foto removida")}>
+                <Button type="button" variant="destructive" size="icon" className="size-11 rounded-full" disabled={pendente} aria-label={`Remover foto ${i + 1}`} onClick={() => rodar(() => removerFotoAction(imovelId, foto.id), "Foto removida")}>
                   <Trash2 />
                 </Button>
               </div>

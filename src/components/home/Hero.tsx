@@ -1,21 +1,25 @@
+import Image from "next/image";
 import Link from "next/link";
 import { LogoMarca } from "@/components/brand/Logo";
 import { botaoContorno, botaoCta } from "@/components/site/estilos";
 import { CabecalhoSite } from "@/components/site/CabecalhoSite";
 import { AnimatedHeading } from "./AnimatedHeading";
 import { FadeIn } from "./FadeIn";
-import { VideoFundo } from "./VideoFundo";
+import { UNSPLASH, urlUnsplash } from "@/mocks/unsplash";
 
-// Vídeo de exemplo (sequência de uma cidade ao entardecer). Trocar por um vídeo próprio
-// do produto antes de divulgar; hoje depende do CDN de origem.
-const VIDEO = "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260403_050628_c4e32401-fab4-4a27-b7a8-6e9291cd5959.mp4";
-
-// Hero no formato do modelo 2: foto (aqui, vídeo) escurecida à esquerda, texto alinhado
-// à esquerda, dois botões e um selo.
+// Hero no formato do modelo 2: foto escurecida à esquerda, texto alinhado à esquerda, dois
+// botões e um selo. A foto é de exemplo (Unsplash); trocar por uma do produto quando houver.
 export function Hero() {
   return (
     <section className="relative isolate flex min-h-[680px] flex-col overflow-hidden bg-deep font-sans text-white md:min-h-[760px]">
-      <VideoFundo src={VIDEO} className="absolute inset-0 -z-20 h-full w-full object-cover" />
+      <Image
+        src={urlUnsplash(UNSPLASH.casaModerna.id, 2000)}
+        alt={UNSPLASH.casaModerna.alt}
+        fill
+        priority
+        sizes="100vw"
+        className="-z-20 object-cover"
+      />
       <div className="absolute inset-0 -z-10 bg-gradient-to-r from-deep/90 via-deep/60 to-deep/15" aria-hidden />
       <div className="absolute inset-0 -z-10 bg-gradient-to-t from-deep/70 via-transparent to-deep/40" aria-hidden />
 
@@ -39,7 +43,7 @@ export function Hero() {
       />
 
       <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center gap-5 px-5 pt-32 pb-40">
-        <p className="text-sm font-semibold tracking-wide text-[#C9A66B] uppercase">Página exclusiva + atendente virtual</p>
+        <p className="text-sm font-semibold tracking-wide text-ouro uppercase">Página exclusiva + atendente virtual</p>
         <AnimatedHeading
           text="Seu imóvel ganha página própria e um atendente que marca a visita."
           className="max-w-3xl text-4xl leading-[1.05] font-medium text-balance md:text-5xl lg:text-6xl"
@@ -62,7 +66,7 @@ export function Hero() {
         </FadeIn>
         <FadeIn delay={1400} duration={1000}>
           <div className="mt-2 flex items-center gap-3">
-            <span className="flex size-12 items-center justify-center rounded-full bg-[#C9A66B] text-deep">
+            <span className="flex size-12 items-center justify-center rounded-full bg-ouro text-deep">
               <LogoMarca className="size-7" />
             </span>
             <p className="text-sm leading-snug text-white/85">

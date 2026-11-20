@@ -42,7 +42,7 @@ function CartaoRegra({ r }: { r: Regra }) {
         className="-z-20 object-cover transition-transform duration-500 ease-[cubic-bezier(0.33,1,0.68,1)] group-hover:scale-[1.06] motion-reduce:transition-none"
       />
       <div className="absolute inset-0 -z-10 bg-gradient-to-t from-deep/95 via-deep/40 to-transparent" aria-hidden />
-      <p className="text-xs font-semibold tracking-wide text-[#C9A66B] uppercase">{r.etiqueta}</p>
+      <p className="text-xs font-semibold tracking-wide text-ouro uppercase">{r.etiqueta}</p>
       <h3 className="mt-1 text-lg leading-tight font-semibold">{r.titulo}</h3>
       <p className="mt-2 text-sm text-white/80">{r.texto}</p>
       <span className="mt-3 flex size-8 items-center justify-center rounded-full border border-white/40" aria-hidden>
@@ -57,7 +57,7 @@ export function AtendenteIA() {
     <section id="atendente-ia" aria-labelledby="titulo-atendente" className="px-4 py-16 md:px-6">
       <div className="mx-auto grid w-full max-w-6xl gap-8 rounded-3xl bg-deep p-6 text-white md:p-10 lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-10">
         <div className="flex flex-col items-start gap-5">
-          <p className="text-sm font-semibold tracking-wide text-[#C9A66B] uppercase">Atendente virtual</p>
+          <p className="text-sm font-semibold tracking-wide text-ouro uppercase">Atendente virtual</p>
           <h2 id="titulo-atendente" className="text-3xl leading-tight font-medium text-balance">
             Um atendente que fala só o que o seu imóvel diz
           </h2>

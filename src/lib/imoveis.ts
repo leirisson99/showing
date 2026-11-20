@@ -123,6 +123,13 @@ export async function buscarImovelPublicoPorId(id: string): Promise<ImovelPublic
   return i ? paraPublico(i) : null;
 }
 
+/** Só os publicados (os vendidos ficam fora do sitemap e do llms.txt, RN-04). */
+export async function listarSlugsIndexaveis(): Promise<string[]> {
+  return store()
+    .imoveis.filter((i) => i.status === "publicado")
+    .map((i) => i.slug);
+}
+
 export async function listarSlugsPublicos(): Promise<string[]> {
   return store()
     .imoveis.filter((i) => i.status !== "rascunho")

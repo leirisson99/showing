@@ -19,8 +19,8 @@ Acompanhamento de execução dos cards de [cards.md](cards.md). Este arquivo reg
 | A — Acesso do corretor | A1, A2 | 0 | 2 | 0 |
 | B — Imóvel e página pública | B1 a B4 | 0 | 4 | 0 |
 | C — Atendente IA e bolha (foco) | C1 a C6 | 0 | 5 | 1 |
-| D — Acompanhamento | D1 a D3 | 0 | 2 | 1 |
-| E — SEO, LGPD e qualidade | E1 a E3 | 0 | 0 | 3 |
+| D — Acompanhamento | D1 a D3 | 0 | 3 | 0 |
+| E — SEO, LGPD e qualidade | E1 a E3 | 0 | 2 | 1 |
 
 ---
 
@@ -79,14 +79,14 @@ Acompanhamento de execução dos cards de [cards.md](cards.md). Este arquivo reg
 | --- | --- | --- | --- |
 | D1 Visitas | M | PARCIAL | **Tela pronta com dados de exemplo** (2026-11-20): `/painel/visitas` com filtros (próximas, realizadas, canceladas, todas), data e hora, imóvel, nome e contato do comprador (telefone e e-mail clicáveis), e as ações Confirmar, Marcar como realizada e Cancelar (com confirmação). Só o corretor muda o status (RN-20) e as transições são pedida → confirmada → realizada, com cancelar antes disso. Visita cancelada libera o horário para o atendente (RN-17). Tudo filtra pelo corretor da sessão (RN-23); 9 testes nas regras. Visão geral do painel mostra as próximas visitas dos 7 dias. **Falta:** ligar ao Prisma (`src/lib/painel/atendimentos.ts` e `src/mocks/atendimento.ts`); o comprador não é avisado ao cancelar (e-mails são o card C5). |
 | D2 Conversas e leads | M | PARCIAL | **Telas prontas com dados de exemplo** (2026-11-20): `/painel/conversas` (filtros todas, transferidas, com contato, com visita; transferidas em destaque, com o motivo) e `/painel/conversas/[id]` (perfil do comprador, consentimento com data e hora, visita e o histórico completo, sem chamadas de ferramenta). Nome e contato só aparecem com consentimento (RN-11) e só para o corretor dono do imóvel (RN-23), testado. Com `USAR_MOCKS=1` há 6 conversas de exemplo (nomes fictícios). **Falta:** ligar ao Prisma; marcar conversa transferida como lida (a visão geral hoje lista todas as transferidas). |
-| D3 Métricas por imóvel | M | A FAZER | Eventos sem nenhum dado pessoal. |
+| D3 Métricas por imóvel | M | PARCIAL | **Interface e eventos prontos com dados de exemplo** (2026-11-20). Eventos sem dado pessoal (`visualizacao` e `chat_aberto` do navegador por `POST /api/eventos`, uma vez por sessão; `chat_mensagem`, `contato_capturado`, `visita_pedida` e `transferencia` do servidor em `/api/chat`). `CartaoMetrica` na visão geral (últimos 30 dias) e na aba Desempenho; colunas por imóvel na lista. A pré-visualização do corretor não conta. 5 testes. **Falta:** ligar à tabela `Evento` do Prisma. |
 
 ## Fase E — SEO, privacidade e qualidade
 
 | Card | Tam. | Status | Observações |
 | --- | --- | --- | --- |
-| E1 SEO da página | M | A FAZER | Completa o P-08. Imóvel vendido fica com `noindex` e fora do sitemap. Inclui `sitemap.ts`, `robots.ts` e `llms.txt`. |
-| E2 Privacidade e LGPD | M | A FAZER | A política de privacidade precisa estar publicada **antes do piloto** (o link aparece na bolha, C4). |
+| E1 SEO da página | M | PARCIAL | **Feito** (2026-11-20): JSON-LD `RealEstateListing` com `Offer` e `Place` (endereço e coordenadas só com `mostrarEndereco`, RN-05; escape seguro), `sitemap.ts` (só publicados), `robots.ts` (bloqueia painel, login e API) e `llms.txt`; vendido segue com `noindex`. 5 testes. **Falta:** medir Lighthouse; slug inexistente ainda responde 200 com `noindex` (streaming com Cache Components). |
+| E2 Privacidade e LGPD | M | PARCIAL | `/privacidade` criada em linguagem simples (dados coletados, finalidade, quem vê, direitos, exclusão), linkada do rodapé, da home e da bolha; contato por `NEXT_PUBLIC_EMAIL_PRIVACIDADE` (sem ele, manda falar com o corretor). **Falta:** definir o prazo de guarda, revisão por uma pessoa de confiança antes do piloto (RNF-14) e a exclusão a pedido no backend (RN-24). |
 | E3 Qualidade e deploy | M | A FAZER | Fixar versões das dependências, em especial `@strands-agents/sdk`. Acompanhar o custo do modelo toda semana. |
 
 ---
@@ -112,6 +112,7 @@ Acompanhamento de execução dos cards de [cards.md](cards.md). Este arquivo reg
 | 2026-11-20 | Tela de clientes: `/painel/clientes` (lista com busca e filtro por visita) e `/painel/clientes/[id]` (contato, perfil, consentimento, visitas e conversas). Conversas com o mesmo telefone ou e-mail viram um cliente; só entram compradores que autorizaram guardar os dados; o id da URL é opaco. 12 testes nessa camada; `typecheck`, `lint` e `build` passam. Não conferida em navegador. |
 | 2026-11-20 | D1 e D2 implementados com mocks (PARCIAL): `/painel/visitas`, `/painel/conversas` e detalhe, links no menu e blocos na visão geral. 79 testes passam; `typecheck`, `lint` e `build` passam. Telas não conferidas em navegador. |
 | 2026-11-20 | C3 implementado com OpenRouter (PARCIAL): rota `/api/chat` com streaming, limites, bolha ligada à API com o simulado como reserva, 7 casos ao vivo escritos e não executados. 70 testes passam; `typecheck`, `lint` e `build` passam. Adicionada a dependência `openai@6.49.0`. |
+| 2026-11-20 | **Frontend: revisão e fechamento.** (1) Correções de layout no celular (menu e abas do painel, hero, cartões, maquete). (2) `/privacidade`, `loading.tsx` com esqueletos, `error.tsx`, `not-found` e `global-error`. (3) Bolha completa: foto do corretor, convite após 8 s, cartão "Visita pedida", "Tentar de novo", retomada pelo servidor por `GET /api/chat` sem guardar texto no aparelho, consentimento "Pode guardar / Prefiro não". (4) Painel no visual novo: visão geral com métricas e ações rápidas, imóveis em tabela, visitas por dia, conversas com "marcar como lida" e contador no menu, clientes, cadastro em etapas (dados criam o rascunho, editor em abas com Revisão e Desempenho), pré-visualização fora do layout do painel. (5) SEO (JSON-LD, sitemap, robots, llms.txt) e hero em foto no lugar do vídeo. (6) Limpeza: `@react-email/components` removido, cores de status viram tokens. 112 testes passam; `typecheck`, `lint` e `build` passam. Telas conferidas por capturas só até a Fase 1. |
 | 2026-11-20 | Seção sobre o atendente de IA na página inicial (`AtendenteIA`, antes `ExemplosCasas`): destaque + 3 cartões, cada um uma regra do atendente (só a ficha, passa o que não sabe, não negocia preço, só agenda em horários livres e com consentimento). Mesmo layout e hover do exemplo, fotos de casas do Unsplash. Os cartões não levam a lugar nenhum. |
 | 2026-11-20 | Hero da página inicial com vídeo de fundo, barra em vidro líquido, título letra por letra e fades (`src/components/home/Hero.tsx`); a história "Como funciona" passa a ter 3 cenas logo depois dele. Vídeo de exemplo em CDN externo, a trocar. `typecheck`, `lint`, `build` e testes passam; não conferido em navegador. |
 | 2026-11-20 | Fotos de exemplo agora são do Unsplash (6 fotos, Unsplash License) em vez das ilustrações SVG, que foram removidas. IDs e créditos em `src/mocks/unsplash.ts` e `docs/creditos-imagens.md`; `images.unsplash.com` entrou em `images.remotePatterns`. Só para desenvolvimento; trocar por fotos reais antes de qualquer demonstração. |

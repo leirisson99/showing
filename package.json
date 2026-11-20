@@ -19,7 +19,6 @@
     "@hookform/resolvers": "7.0.7",
     "@prisma/adapter-pg": "7.10.1",
     "@prisma/client": "7.10.1",
-    "@react-email/components": "1.0.12",
     "@react-email/render": "2.3.1",
     "@strands-agents/sdk": "1.25.0",
     "class-variance-authority": "^0.7.1",

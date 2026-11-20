@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { Copy, Eye, Globe, GlobeLock } from "lucide-react";
-import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { despublicarImovelAction, publicarImovelAction } from "@/app/(painel)/painel/imoveis/actions";
 import { cn } from "@/lib/utils";
@@ -10,6 +9,7 @@ import type { StatusImovel } from "@/lib/painel/tipos";
 import { AcoesImovel } from "./AcoesImovel";
 import { BadgeStatus } from "./BadgeStatus";
 import { useAcao } from "./use-acao";
+import { useCopiarLink } from "./use-copiar-link";
 
 type Props = {
   id: string;
@@ -25,14 +25,7 @@ export function PublicacaoImovel({ id, titulo, slug, status, falta, urlPublica }
   const { rodar, pendente } = useAcao();
   const noAr = status !== "rascunho";
 
-  async function copiar() {
-    try {
-      await navigator.clipboard.writeText(urlPublica);
-      toast.success("Link copiado");
-    } catch {
-      toast.error("Não foi possível copiar o link.");
-    }
-  }
+  const copiar = useCopiarLink(urlPublica);
 
   return (
     <section aria-label="Publicação" className="flex flex-col gap-3 rounded-xl border bg-card p-4">

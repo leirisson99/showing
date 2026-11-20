@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { toast } from "sonner";
 import { Copy, ExternalLink, MoreVertical, Pencil, Tag, Trash2 } from "lucide-react";
 import {
   AlertDialog,
@@ -25,6 +24,7 @@ import {
 import { excluirImovelAction, marcarVendidoAction } from "@/app/(painel)/painel/imoveis/actions";
 import type { StatusImovel } from "@/lib/painel/tipos";
 import { useAcao } from "./use-acao";
+import { useCopiarLink } from "./use-copiar-link";
 
 type Props = { id: string; titulo: string; slug: string; status: StatusImovel; urlPublica: string };
 
@@ -33,14 +33,7 @@ export function AcoesImovel({ id, titulo, slug, status, urlPublica }: Props) {
   const [confirmarExclusao, setConfirmarExclusao] = useState(false);
   const noAr = status !== "rascunho";
 
-  async function copiarLink() {
-    try {
-      await navigator.clipboard.writeText(urlPublica);
-      toast.success("Link copiado");
-    } catch {
-      toast.error("Não foi possível copiar. Copie o link pela página do imóvel.");
-    }
-  }
+  const copiarLink = useCopiarLink(urlPublica);
 
   return (
     <>

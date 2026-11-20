@@ -92,7 +92,7 @@ export function ListaConversas({ itens }: { itens: ItemConversa[] }) {
                 </div>
               </Link>
               {i.transferida && (
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-[#FFF4E0] px-4 py-3 text-sm text-[#7A4A00]">
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-aviso-bg px-4 py-3 text-sm text-aviso">
                   <p className="flex items-start gap-2">
                     <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
                     <span>

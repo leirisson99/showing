@@ -65,9 +65,9 @@ Manrope em títulos e texto; Cormorant Garamond só no nome da marca. Títulos c
 
 Princípios: calmo, curto e a serviço da leitura. Nada de bounce, nada que atrapalhe ler.
 
-- **Página inicial:** abre com um hero de vídeo em tela cheia, escurecido à esquerda por um degradê, título que entra letra por letra e textos com fade escalonado (200, 800, 1200 e 1400 ms). Depois vem a história rolável "Como funciona", em três cenas (a página, o atendente, a visita): a rolagem controla a entrada de cada cena e a chegada das falas do chat. Sem biblioteca: `HistoriaScroll` escreve só `--sp` (progresso 0 a 1) e `data-fase`; o movimento é CSS (`globals.css`).
-- **Vídeo do hero:** é um vídeo de exemplo (cidade ao entardecer) hospedado em CDN externo (`src/components/home/Hero.tsx`). Trocar por um vídeo próprio antes de divulgar.
-- **Acessibilidade:** com `prefers-reduced-motion` o vídeo fica parado, o título e os fades aparecem de uma vez e a história vira uma sequência normal de seções; sem JavaScript também, com todo o conteúdo no HTML. O título animado tem uma cópia em texto (`sr-only`) para leitores de tela e buscadores. Cenas fora de vista ficam `visibility: hidden` (sem foco).
+- **Página inicial:** abre com um hero em tela cheia (foto de casa, escurecida à esquerda por um degradê), título que entra letra por letra e textos com fade escalonado (200, 800, 1200 e 1400 ms). Depois vem a história rolável "Como funciona", em três cenas (a página, o atendente, a visita): a rolagem controla a entrada de cada cena e a chegada das falas do chat. Sem biblioteca: `HistoriaScroll` escreve só `--sp` (progresso 0 a 1) e `data-fase`; o movimento é CSS (`globals.css`).
+- **Foto do hero:** é uma foto de exemplo do Unsplash (`src/components/home/Hero.tsx`). Trocar por uma foto do produto quando houver; um vídeo só entra se for leve (alguns MB) e próprio.
+- **Acessibilidade:** com `prefers-reduced-motion` o título e os fades aparecem de uma vez e a história vira uma sequência normal de seções; sem JavaScript também, com todo o conteúdo no HTML. O título animado tem uma cópia em texto (`sr-only`) para leitores de tela e buscadores. Cenas fora de vista ficam `visibility: hidden` (sem foco).
 - **Fora da página inicial:** transições de 100 a 200 ms (padrão do shadcn). A bolha e o painel não usam rolagem animada.
 - **Quando usar GSAP:** as skills `gsap-*` e `cinematic-scroll-storytelling` estão instaladas, mas a página inicial não precisa de biblioteca. Só adicionar `gsap` se surgir uma animação que o CSS não resolva.
 
