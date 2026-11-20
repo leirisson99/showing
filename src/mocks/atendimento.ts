@@ -111,11 +111,15 @@ export function criarRepositorioMock(opcoes: Opcoes = {}) {
     async buscarConversa(id) {
       return conversas.get(id) ?? null;
     },
-    async salvarLead(id, lead: Lead, consentimentoEm) {
+    async registrarConsentimento(id, aceito, em) {
       const c = conversa(id);
-      c.lead = { ...c.lead, ...lead };
-      c.consentimento = true;
-      c.consentimentoEm = consentimentoEm;
+      c.consentimento = aceito;
+      c.consentimentoEm = aceito ? em : null;
+      c.atualizadaEm = new Date();
+    },
+    async salvarLead(id, lead) {
+      const c = conversa(id);
+      c.lead = { nome: "Comprador", ...c.lead, ...lead };
       c.atualizadaEm = new Date();
     },
     async criarVisita({ imovelId, conversaId: cid, dataHora }) {
@@ -168,7 +172,8 @@ function semear({ repo, estado, sync }: Instancia) {
     const cid = sync.criarConversa(imovelId);
     void repo.salvarMensagens(cid, falas);
     const criada = new Date(agora.getTime() - idadeDias * dia);
-    void repo.salvarLead(cid, lead, criada);
+    void repo.registrarConsentimento(cid, true, criada);
+    void repo.salvarLead(cid, lead);
     const vid = sync.criarVisita(imovelId, cid, dataHora);
     const v = estado.visitas.find((x) => x.id === vid)!;
     v.status = status;

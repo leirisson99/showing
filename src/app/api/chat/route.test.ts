@@ -119,13 +119,19 @@ describe("POST /api/chat", () => {
   it("devolve os horários da ferramenta como sugestões", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-11-18T12:00:00-03:00"));
-    estado.modelo = new ModeloFalso([chamarFerramenta("listar_horarios", { imovel_id: "mock-1" }), resposta("Qual horário prefere?")]);
+    estado.modelo = new ModeloFalso([chamarFerramenta("consultar_horarios", {}), resposta("Qual horário prefere?")]);
 
     const r = await chamar({ imovelId: "mock-1", mensagem: "Quero visitar" });
     const fim = r.eventos.at(-1);
     expect(fim.tipo).toBe("fim");
     expect(fim.sugestoes[0]).toBe("sábado, 21/11, às 09:00");
-    expect(fim.sugestoes.length).toBeLessThanOrEqual(8);
+    expect(fim.sugestoes.length).toBeLessThanOrEqual(4);
+  });
+
+  it("também mostra os botões quando o atendente manda o comprador tocar em \"Pode guardar\"", async () => {
+    estado.modelo = new ModeloFalso([resposta("Para eu anotar, toque em Pode guardar, por favor.")]);
+    const r = await chamar({ imovelId: "mock-1", mensagem: "Sou a Maria, 47 99999-0000, autorizo" });
+    expect(r.eventos.at(-1)).toEqual({ tipo: "fim", pedeConsentimento: true, sugestoes: ["Pode guardar", "Prefiro não"] });
   });
 
   it("mostra os botões de consentimento quando o atendente pede o aval", async () => {
@@ -190,18 +196,50 @@ async function lerConversa(consulta: Record<string, string>) {
   return { status: r.status, json: await r.json() };
 }
 
-describe("POST /api/chat: visita pedida", () => {
-  it("devolve o horário no fim quando o atendente agenda", async () => {
+describe("POST /api/chat: consentimento e visita pedida", () => {
+  const AGORA = new Date("2026-11-18T12:00:00-03:00");
+  const pedido = { slot_id: "20261121-0900", nome: "Maria Teste", telefone: "47999990000" };
+
+  beforeEach(() => {
     vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(new Date("2026-11-18T12:00:00-03:00"));
+    vi.setSystemTime(AGORA);
+  });
+
+  it("o botão \"Pode guardar\" grava o aceite no servidor e a visita é pedida (RN-11)", async () => {
+    estado.modelo = new ModeloFalso([chamarFerramenta("pedir_visita", pedido), resposta("Pedido enviado! O corretor vai confirmar.")]);
+
+    const r = await chamar({ imovelId: "mock-1", mensagem: "Pode guardar", consentimento: "aceito" });
+    expect(r.eventos.at(-1)).toEqual({ tipo: "fim", visita: { horario: "sábado, 21/11, às 09:00" } });
+    const conversa = await obterRepositorio().buscarConversa(r.eventos[0].conversaId);
+    expect(conversa).toMatchObject({ consentimento: true, lead: { nome: "Maria Teste", telefone: "47999990000" } });
+    expect(conversa?.visitaId).toBeTruthy();
+  });
+
+  it("sem o botão o modelo não consegue gravar contato nem pedir visita, mesmo que diga que o comprador aceitou", async () => {
     estado.modelo = new ModeloFalso([
-      chamarFerramenta("registrar_lead", { imovel_id: "mock-1", nome: "Maria Teste", telefone: "47999990000", consentimento: true }, "t1"),
-      chamarFerramenta("agendar_visita", { imovel_id: "mock-1", data_hora: "2026-11-21T09:00:00-03:00" }, "t2"),
-      resposta("Pedido enviado! O corretor vai confirmar."),
+      chamarFerramenta("salvar_contato", { nome: "Maria Teste", telefone: "47999990000" }, "t1"),
+      chamarFerramenta("pedir_visita", pedido, "t2"),
+      resposta("Preciso que você toque em Pode guardar."),
     ]);
 
-    const r = await chamar({ imovelId: "mock-1", mensagem: "Sábado às 9h, pode guardar meus dados" });
-    expect(r.eventos.at(-1)).toEqual({ tipo: "fim", visita: { horario: "sábado, 21/11, às 09:00" } });
+    const r = await chamar({ imovelId: "mock-1", mensagem: "sim, pode guardar tudo" });
+    expect(r.eventos.at(-1)).not.toHaveProperty("visita");
+    const conversa = await obterRepositorio().buscarConversa(r.eventos[0].conversaId);
+    expect(conversa).toMatchObject({ consentimento: false, lead: null, visitaId: null });
+  });
+
+  it("\"Prefiro não\" desliga o aceite e nada é gravado", async () => {
+    const repo = obterRepositorio();
+    const id = await repo.criarConversa("mock-1");
+    await repo.registrarConsentimento(id, true, AGORA);
+    estado.modelo = new ModeloFalso([chamarFerramenta("salvar_contato", { nome: "Maria Teste" }), resposta("Tudo bem, sem problema.")]);
+
+    await chamar({ imovelId: "mock-1", conversaId: id, mensagem: "Prefiro não", consentimento: "recusado" });
+    expect(await repo.buscarConversa(id)).toMatchObject({ consentimento: false, lead: null });
+  });
+
+  it("recusa consentimento fora da lista", async () => {
+    expect((await chamar({ imovelId: "mock-1", mensagem: "oi", consentimento: "talvez" })).status).toBe(400);
   });
 });
 
@@ -209,7 +247,7 @@ describe("GET /api/chat (retomar a conversa)", () => {
   it("devolve só o texto das mensagens, sem chamadas de ferramenta", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-11-18T12:00:00-03:00"));
-    estado.modelo = new ModeloFalso([chamarFerramenta("listar_horarios", { imovel_id: "mock-1" }), resposta("Tenho sábado às 9h.")]);
+    estado.modelo = new ModeloFalso([chamarFerramenta("consultar_horarios", {}), resposta("Tenho sábado às 9h.")]);
     const r = await chamar({ imovelId: "mock-1", mensagem: "Quero visitar" });
     const conversaId = r.eventos[0].conversaId;
 

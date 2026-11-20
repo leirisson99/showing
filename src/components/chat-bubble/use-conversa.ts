@@ -5,7 +5,7 @@ import { calcularHorariosLivres } from "@/lib/ai/horarios";
 import type { ModoChat } from "./eventos";
 import { conversaEncerrada } from "./limite";
 import { ESTADO_INICIAL, responder, saudacao, type ContextoMock, type Estado, type Resposta } from "./mock-atendente";
-import { carregarConversa, conversarComApi, ErroApi } from "./transporte";
+import { carregarConversa, conversarComApi, ErroApi, type Consentimento } from "./transporte";
 
 export type Mensagem = Resposta & { id: string; papel: "usuario" | "assistente" };
 
@@ -39,10 +39,10 @@ function gravar(imovelId: string, dados: Guardado) {
 const dormir = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const novoId = () => `m-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 
-// Horários do corretor usados só pelo atendente simulado; o real recebe de listar_horarios.
+// Horários do corretor usados só pelo atendente simulado; o real recebe de consultar_horarios.
 const HORARIOS_SIMULADO = { sab: ["09:00", "10:00", "11:00"], dom: ["10:00"] };
 
-export type Falha = { texto: string; mensagem: string };
+export type Falha = { texto: string; mensagem: string; consentimento?: Consentimento };
 
 export function useConversa({ imovelId, corretor, imovel }: Entrada) {
   const [guardado] = useState(() => ler(imovelId));
@@ -113,10 +113,10 @@ export function useConversa({ imovelId, corretor, imovel }: Entrada) {
   // Resposta da IA (rota /api/chat) em streaming. Devolve false só quando a IA não está
   // configurada (503), para cair no atendente simulado.
   const enviarParaApi = useCallback(
-    async (limpo: string): Promise<boolean> => {
+    async (limpo: string, consentimento?: Consentimento): Promise<boolean> => {
       let id: string | null = null;
       try {
-        for await (const ev of conversarComApi({ imovelId, conversaId: conversaId.current, mensagem: limpo })) {
+        for await (const ev of conversarComApi({ imovelId, conversaId: conversaId.current, mensagem: limpo, consentimento })) {
           if (!vivo.current) return true;
           if (ev.tipo === "inicio") {
             guardarConversa(ev.conversaId, false);
@@ -130,7 +130,7 @@ export function useConversa({ imovelId, corretor, imovel }: Entrada) {
             }
           } else if (ev.tipo === "erro") {
             setDigitando(false);
-            setFalha({ texto: ev.texto, mensagem: limpo });
+            setFalha({ texto: ev.texto, mensagem: limpo, consentimento });
           } else if (ev.tipo === "fim") {
             if (ev.encerrada) {
               setEncerradaNoServidor(true);
@@ -147,7 +147,7 @@ export function useConversa({ imovelId, corretor, imovel }: Entrada) {
         if (e instanceof ErroApi && e.codigo === "ia_indisponivel") return false;
         if (e instanceof ErroApi && e.codigo === "conversa_nao_encontrada") guardarConversa(null, false);
         setDigitando(false);
-        setFalha({ texto: textoDoErro(e), mensagem: limpo });
+        setFalha({ texto: textoDoErro(e), mensagem: limpo, consentimento });
         return true;
       }
     },
@@ -178,7 +178,7 @@ export function useConversa({ imovelId, corretor, imovel }: Entrada) {
   );
 
   const enviar = useCallback(
-    async (conteudo: string, repetindo = false) => {
+    async (conteudo: string, repetindo = false, consentimento?: Consentimento) => {
       const limpo = conteudo.trim().slice(0, 500);
       if (!limpo || atual.current.digitando || atual.current.encerrada) return;
 
@@ -186,7 +186,7 @@ export function useConversa({ imovelId, corretor, imovel }: Entrada) {
       if (!repetindo) adicionar({ id: novoId(), papel: "usuario", texto: limpo });
       setDigitando(true);
 
-      if (!modoSimulado.current && (await enviarParaApi(limpo))) return;
+      if (!modoSimulado.current && (await enviarParaApi(limpo, consentimento))) return;
       modoSimulado.current = true;
       setSimulado(true);
       await enviarSimulado(limpo);
@@ -197,7 +197,7 @@ export function useConversa({ imovelId, corretor, imovel }: Entrada) {
   /** Reenvia a última mensagem depois de uma falha, sem duplicá-la na tela. */
   const tentarDeNovo = useCallback(() => {
     const mensagem = falha?.mensagem;
-    if (mensagem) void enviar(mensagem, true);
+    if (mensagem) void enviar(mensagem, true, falha?.consentimento);
   }, [enviar, falha]);
 
   // Primeira abertura: retoma a conversa do servidor (se houver id) ou mostra a saudação.

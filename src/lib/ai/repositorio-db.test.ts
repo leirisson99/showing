@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { agendarVisita, listarHorarios, registrarLead, transferirCorretor, type ContextoAtendimento } from "./atendimento";
+import { consultarHorarios, pedirVisita, salvarContato, transferirParaCorretor, type ContextoAtendimento } from "./atendimento";
 import { ConflitoDeHistorico, ConflitoDeVisita } from "./repositorio";
 
 // Integração com o Postgres local: repositório do atendente e leituras do painel.
@@ -53,21 +53,30 @@ describe.skipIf(!temBanco)("atendimento no Prisma", () => {
     const conversaId = await repo.criarConversa(imovelA);
     const ctx = ctxDe(repo, imovelA, conversaId);
 
-    const lista = await listarHorarios(ctx, { imovel_id: imovelA });
-    expect(lista.ok && (lista.horarios as { data_hora: string }[])[0].data_hora).toBe("2026-11-21T09:00:00-03:00");
+    const lista = await consultarHorarios(ctx, {});
+    expect(lista.ok && (lista.horarios as { slot_id: string }[])[0].slot_id).toBe("20261121-0900");
 
-    expect((await registrarLead(ctx, { imovel_id: imovelA, nome: "Maria Souza", telefone: "(47) 99999-0000", consentimento: true })).ok).toBe(true);
+    // Sem o aceite dos botões, nada é gravado.
+    expect((await salvarContato(ctx, { nome: "Maria Souza", telefone: "(47) 99999-0000" })).ok).toBe(false);
+    expect((await pedirVisita(ctx, { slot_id: "20261121-0900", nome: "Maria Souza", telefone: "(47) 99999-0000" })).ok).toBe(false);
+    expect((await repo.buscarConversa(conversaId))?.lead).toBeNull();
+
+    await repo.registrarConsentimento(conversaId, true, AGORA);
+    expect((await salvarContato(ctx, { nome: "Maria Souza", telefone: "(47) 99999-0000" })).ok).toBe(true);
     const c = await repo.buscarConversa(conversaId);
     expect(c).toMatchObject({ consentimento: true, lead: { nome: "Maria Souza", telefone: "47999990000" } });
+    const gravado = await db.conversa.findUniqueOrThrow({ where: { id: conversaId } });
+    expect(gravado.consentimentoEm).toEqual(AGORA);
 
-    const v = await agendarVisita(ctx, { imovel_id: imovelA, data_hora: "2026-11-21T09:00:00-03:00" });
+    const v = await pedirVisita(ctx, { slot_id: "20261121-0900", nome: "Maria Souza", telefone: "(47) 99999-0000", observacao: "Prefere de manhã" });
     expect(v.ok && v.status).toBe("pedida");
     const dado = await db.visita.findFirstOrThrow({ where: { conversaId } });
     expect(dado).toMatchObject({ status: "pedida", corretorId: dono, imovelId: imovelA });
     expect(dado.dataHora.getTime()).toBe(SABADO_9H.getTime());
+    expect(dado.observacao).toBe("Prefere de manhã");
 
     // RN-19: uma visita por conversa.
-    expect((await agendarVisita(ctx, { imovel_id: imovelA, data_hora: "2026-11-21T10:00:00-03:00" })).ok).toBe(false);
+    expect((await pedirVisita(ctx, { slot_id: "20261121-1000", nome: "Maria Souza", telefone: "(47) 99999-0000" })).ok).toBe(false);
   });
 
   it("o horário pedido some das opções, inclusive para outro imóvel do mesmo corretor, e cancelar libera", async () => {
@@ -95,11 +104,11 @@ describe.skipIf(!temBanco)("atendimento no Prisma", () => {
     const repo = repoDe();
     const conversaId = await repo.criarConversa(imovelB);
     const ctx = ctxDe(repo, imovelB, conversaId);
-    await registrarLead(ctx, { imovel_id: imovelB, nome: "João", email: "joao@exemplo.com", consentimento: true });
+    await repo.registrarConsentimento(conversaId, true, AGORA);
     // Lista livre simulada: o repositório diz que ninguém ocupa, mas o banco já tem o horário.
     const falso = { ...repo, visitasOcupadas: async () => [] };
-    const r = await agendarVisita({ ...ctx, repo: falso }, { imovel_id: imovelB, data_hora: "2026-11-21T09:00:00-03:00" });
-    expect(!r.ok && r.erro).toMatch(/acabou de ser pedido/);
+    const r = await pedirVisita({ ...ctx, repo: falso }, { slot_id: "20261121-0900", nome: "João", telefone: "47988887777" });
+    expect(!r.ok && r.erro).toBe("Horário ocupado, consulte os horários de novo.");
   });
 
   it("não deixa duas respostas simultâneas sobrescreverem o histórico", async () => {
@@ -124,12 +133,12 @@ describe.skipIf(!temBanco)("atendimento no Prisma", () => {
     const id = await repo.criarConversa(imovelA);
     await repo.salvarMensagens(id, [{ role: "user", content: [{ text: "Tem piscina?" }] }]);
     const ctx = ctxDe(repo, imovelA, id);
-    await transferirCorretor(ctx, { imovel_id: imovelA, motivo: "Piscina" });
+    await transferirParaCorretor(ctx, { motivo: "sem_resposta", resumo: "Piscina" });
     await painel.marcarConversaLida(dono, id);
     expect((await painel.listarConversas(dono)).find((c) => c.id === id)?.naoLida).toBe(false);
-    await transferirCorretor(ctx, { imovel_id: imovelA, motivo: "Condomínio" });
+    await transferirParaCorretor(ctx, { motivo: "negociacao", resumo: "Condomínio" });
     const c = (await painel.listarConversas(dono)).find((x) => x.id === id)!;
-    expect(c).toMatchObject({ naoLida: true, motivoTransferencia: "Piscina | Condomínio" });
+    expect(c).toMatchObject({ naoLida: true, motivoTransferencia: "Pergunta sem resposta na ficha: Piscina | Quer negociar preço ou condições: Condomínio" });
   });
 
   it("o painel só mostra dado do dono e o contato só depois do consentimento (RN-11, RN-23)", async () => {

@@ -20,7 +20,8 @@ async function visitaPara(imovelId: string, nome = "Maria (teste)") {
     { role: "user", content: [{ text: "Quero visitar" }] },
     { role: "assistant", content: [{ text: "Claro!" }] },
   ]);
-  await repo.salvarLead(conversaId, { nome, telefone: "47999990000" }, new Date());
+  await repo.registrarConsentimento(conversaId, true, new Date());
+  await repo.salvarLead(conversaId, { nome, telefone: "47999990000" });
   const { id: visitaId } = await repo.criarVisita({ imovelId, conversaId, dataHora: new Date("2026-11-21T10:00:00-03:00") });
   return { conversaId, visitaId };
 }
@@ -133,7 +134,8 @@ describe("clientes", () => {
     const outra = await repo.criarConversa("mock-1");
     await repo.salvarMensagens(outra, [{ role: "user", content: [{ text: "Oi de novo" }] }]);
     // Mesmo telefone, escrito de outro jeito, e um dado novo no perfil.
-    await repo.salvarLead(outra, { nome: "Maria Souza", telefone: "(47) 99999-0000", prazo: "Até 2 meses" }, new Date());
+    await repo.registrarConsentimento(outra, true, new Date());
+    await repo.salvarLead(outra, { nome: "Maria Souza", telefone: "(47) 99999-0000", prazo: "Até 2 meses" });
 
     const clientes = await listarClientes(DONO);
     expect(clientes).toHaveLength(1);
@@ -147,7 +149,8 @@ describe("clientes", () => {
     await visitaPara("mock-1", "Maria");
     const joao = await repo.criarConversa("mock-1");
     await repo.salvarMensagens(joao, [{ role: "user", content: [{ text: "oi" }] }]);
-    await repo.salvarLead(joao, { nome: "João", email: "joao@exemplo.com" }, new Date());
+    await repo.registrarConsentimento(joao, true, new Date());
+    await repo.salvarLead(joao, { nome: "João", email: "joao@exemplo.com" });
     const anonimo = await repo.criarConversa("mock-1");
     await repo.salvarMensagens(anonimo, [{ role: "user", content: [{ text: "só olhando" }] }]);
 

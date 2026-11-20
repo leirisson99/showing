@@ -1,44 +1,37 @@
 import { tool } from "@strands-agents/sdk";
-import {
-  agendarVisita,
-  esquemas,
-  listarHorarios,
-  registrarLead,
-  transferirCorretor,
-  type ContextoAtendimento,
-} from "./atendimento";
+import { consultarHorarios, esquemas, pedirVisita, salvarContato, transferirParaCorretor, type ContextoAtendimento } from "./atendimento";
 
-// Ferramentas do atendente. Um conjunto novo por requisição, preso à conversa e ao imóvel (ctx).
-// As regras ficam em atendimento.ts; aqui só a descrição que o modelo lê.
+// Ferramentas do atendente. Um conjunto novo por requisição, preso à conversa e ao imóvel (ctx):
+// o modelo não passa nem escolhe o imóvel. As regras ficam em atendimento.ts; aqui só a descrição que o modelo lê.
 export function criarTools(ctx: ContextoAtendimento) {
   return [
     tool({
-      name: "listar_horarios",
+      name: "consultar_horarios",
       description:
-        "Lista os horários livres para visita ao imóvel. Use sempre antes de oferecer qualquer horário. Nunca ofereça um horário que não venha desta ferramenta.",
-      inputSchema: esquemas.listarHorarios,
-      callback: (entrada) => listarHorarios(ctx, entrada),
+        "Lista os horários livres do corretor para visitar este imóvel. Use quando o comprador quiser agendar uma visita ou perguntar quando pode ver o imóvel. Ofereça ao comprador apenas os horários retornados aqui; nunca sugira um horário que não veio desta ferramenta. Retorna até 6 horários, cada um com slot_id, dia e hora. a_partir_de (AAAA-MM-DD) é opcional; se o comprador não disser, usa hoje.",
+      inputSchema: esquemas.consultarHorarios,
+      callback: (entrada) => consultarHorarios(ctx, entrada),
     }),
     tool({
-      name: "registrar_lead",
+      name: "pedir_visita",
       description:
-        "Registra nome e contato do comprador. Só chame depois que o comprador autorizar explicitamente o uso dos dados e com consentimento = true.",
-      inputSchema: esquemas.registrarLead,
-      callback: (entrada) => registrarLead(ctx, entrada),
+        "Registra o pedido de visita em um horário escolhido pelo comprador. Use só depois que o comprador escolher um dos horários de consultar_horarios, informar nome e telefone e tocar em \"Pode guardar\". A visita fica como \"pedida\" até o corretor confirmar; nunca diga ao comprador que ela está confirmada. Use o slot_id exatamente como veio de consultar_horarios.",
+      inputSchema: esquemas.pedirVisita,
+      callback: (entrada) => pedirVisita(ctx, entrada),
     }),
     tool({
-      name: "agendar_visita",
+      name: "salvar_contato",
       description:
-        "Pede a visita em um horário retornado por listar_horarios (use o campo data_hora exatamente como veio). Exige registrar_lead antes. A visita fica como pedida até o corretor confirmar.",
-      inputSchema: esquemas.agendarVisita,
-      callback: (entrada) => agendarVisita(ctx, entrada),
+        "Salva ou atualiza os dados do comprador para o corretor entrar em contato. Use quando o comprador informar nome, telefone, e-mail ou forma de pagamento durante a conversa. Só funciona se o comprador tiver aceitado guardar os dados; se recusar, não insista. Todos os campos são opcionais, mas pelo menos um é obrigatório.",
+      inputSchema: esquemas.salvarContato,
+      callback: (entrada) => salvarContato(ctx, entrada),
     }),
     tool({
-      name: "transferir_corretor",
+      name: "transferir_para_corretor",
       description:
-        "Passa a conversa ao corretor quando o comprador pergunta algo que não está na ficha do imóvel, quer negociar ou precisa de atendimento humano. Informe no motivo a pergunta pendente.",
-      inputSchema: esquemas.transferirCorretor,
-      callback: (entrada) => transferirCorretor(ctx, entrada),
+        "Passa a conversa para o corretor. Use quando: a resposta não estiver nos dados do imóvel, o comprador pedir para falar com uma pessoa, o comprador quiser negociar preço ou condições, ou houver uma reclamação. Depois de transferir, avise o comprador que o corretor vai entrar em contato, sem prometer prazo. motivo: sem_resposta, pedido_do_comprador, negociacao ou reclamacao. resumo: uma frase com o que o comprador quer saber.",
+      inputSchema: esquemas.transferirParaCorretor,
+      callback: (entrada) => transferirParaCorretor(ctx, entrada),
     }),
   ];
 }

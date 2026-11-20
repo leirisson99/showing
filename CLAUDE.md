@@ -61,16 +61,16 @@ Atendente IA — regras que não podem quebrar
 Estas regras protegem o corretor e o comprador. Qualquer mudança no prompt ou nas tools deve mantê-las:
 
 Responde somente com dados da ficha do imóvel e do bairro passados no prompt. Nunca inventa preço, condomínio, metragem, disponibilidade ou condição.
-O que não está na ficha: "vou confirmar com o corretor" + chamada de transferir_corretor.
+O que não está na ficha: "vou confirmar com o corretor" + chamada de transferir_para_corretor.
 Não negocia preço e não promete aprovação de financiamento.
 Se apresenta como assistente virtual do corretor na primeira mensagem.
-Pede consentimento antes de chamar registrar_lead com nome e contato.
-Só agenda em horários retornados por listar_horarios. Nunca inventa horário.
+Pede consentimento (botões "Pode guardar" / "Prefiro não") antes de guardar nome e contato com salvar_contato ou pedir_visita.
+Só agenda em horários retornados por consultar_horarios (slot_id). Nunca inventa horário.
 Mensagens curtas, português informal, no máximo uma pergunta por vez.
 
 A ficha do imóvel cabe no prompt: não adicione RAG, embeddings ou banco vetorial na POC.
 
-Ferramentas atuais (src/lib/ai/tools.ts): listar_horarios, registrar_lead, agendar_visita, transferir_corretor. Toda tool valida os argumentos com Zod e confere se o imovel_id existe e está publicado.
+Ferramentas atuais (src/lib/ai/tools.ts): consultar_horarios, pedir_visita, salvar_contato, transferir_para_corretor. Toda tool valida os argumentos com Zod e confere se o imóvel da conversa existe e está publicado (o modelo não passa imovel_id: a tool já nasce presa ao imóvel e à conversa). O consentimento (RN-11) é gravado pelo servidor quando o comprador toca em "Pode guardar" na bolha (campo `consentimento` do POST /api/chat); nunca pelo modelo. Sem ele, salvar_contato e pedir_visita não gravam nada.
 
 Bolha de chat
 Carregada com next/dynamic depois da página, para não afetar desempenho nem SEO.

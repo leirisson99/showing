@@ -122,6 +122,15 @@ Nodemailer com Gmail (senha de app), só com `EMAIL_USER`, `EMAIL_APP_PASSWORD` 
 
 **Decisão sua:** o prazo de 180 dias é um valor inicial meu, escolhido por ser curto para um piloto de 4 semanas; mude `RETENCAO_DIAS` se preferir outro. **Ainda falta** a revisão do texto da `/privacidade` por uma pessoa de confiança antes do piloto (RNF-14) e definir `NEXT_PUBLIC_EMAIL_PRIVACIDADE`.
 
+## BK-09a · Ferramentas do atendente (spec do produto) — PRONTO (2026-11-20)
+
+As 4 tools passaram a seguir o spec: `consultar_horarios` (até 6 horários com `slot_id`, `dia` e `hora`; `a_partir_de` opcional; sem horário: "Sem horários livres nos próximos dias"), `pedir_visita` (`slot_id`, `nome`, `telefone`, `forma_pagamento` e `observacao` opcionais; a visita nasce `pedida` e a resposta nunca diz "confirmada"; "Horário ocupado, consulte os horários de novo."), `salvar_contato` (campos opcionais, ao menos um; "Contato salvo") e `transferir_para_corretor` (`motivo`: sem_resposta, pedido_do_comprador, negociacao ou reclamacao, mais `resumo`; "Conversa transferida para [corretor]"). Substituem `listar_horarios`, `registrar_lead`, `agendar_visita` e `transferir_corretor`.
+- **Consentimento (RN-11) fora do modelo:** os botões "Pode guardar" / "Prefiro não" mandam `consentimento: "aceito" | "recusado"` no POST `/api/chat`; o servidor grava o aceite (com data e hora) antes do modelo responder. Sem aceite, `salvar_contato` e `pedir_visita` não gravam nada e o modelo recebe uma instrução para pedir que o comprador toque no botão. Recusar desliga o aceite. Antes o modelo passava `consentimento = true`.
+- **slot_id** = dia e hora de Brasília (`20261121-0900`); a tool confere contra os horários livres no momento do pedido (RN-17, RN-18), então um id inventado ou já ocupado é recusado.
+- **Sem `imovel_id`:** as tools nascem presas ao imóvel e à conversa. O resumo e o motivo da transferência vão para o corretor como "Pergunta sem resposta na ficha: …"; `interesse` e `observacao` ficam no lead e na visita.
+- **Prompt, bolha e rota:** prompt reescrito (inclui o que fazer quando o comprador "autoriza" digitando), a rota mostra os botões também quando o atendente pede o toque, e `contato_capturado` é contado uma vez por conversa. `maxTokens` 3000 e `reasoning: low` (OpenRouter), porque o modelo atual estourava o limite só raciocinando e devolvia resposta vazia.
+- **Testes:** 152 unitários e de integração; **8 casos ao vivo passaram duas vezes seguidas**, incluindo o fluxo completo (horários → aceite pelo botão → visita pedida) e o de horário inventado.
+
 ## BK-09 · Atendente em produção (modelo e custo) — M
 
 - Escolher o modelo (`AI_MODEL`) e fixar o provedor (`AI_BASE_URL`, OpenRouter hoje); acompanhar o custo toda semana.

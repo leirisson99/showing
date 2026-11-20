@@ -45,20 +45,22 @@ export function criarRepositorioDb(): RepositorioAtendimento {
       };
     },
 
-    // RN-11: só é chamado depois do consentimento.
-    async salvarLead(conversaId, lead, consentimentoEm) {
+    // RN-11, RNF-13: o aceite vem dos botões da bolha, com data e hora; recusar (ou revogar) desliga.
+    async registrarConsentimento(conversaId, aceito, em) {
+      await db.conversa.update({ where: { id: conversaId }, data: { consentimento: aceito, consentimentoEm: aceito ? em : null } });
+    },
+
+    // Só chamado com consentimento já registrado.
+    async salvarLead(conversaId, lead) {
       const atual = await db.conversa.findUnique({ where: { id: conversaId }, select: { perfilLead: true } });
-      await db.conversa.update({
-        where: { id: conversaId },
-        data: { perfilLead: { ...((atual?.perfilLead as object | null) ?? {}), ...lead }, consentimento: true, consentimentoEm },
-      });
+      await db.conversa.update({ where: { id: conversaId }, data: { perfilLead: { ...((atual?.perfilLead as object | null) ?? {}), ...lead } } });
     },
 
     // RN-20: toda visita nasce `pedida`. O índice único parcial recusa o mesmo horário do mesmo corretor.
-    async criarVisita({ imovelId, conversaId, dataHora }) {
+    async criarVisita({ imovelId, conversaId, dataHora, observacao }) {
       const imovel = await db.imovel.findUniqueOrThrow({ where: { id: imovelId }, select: { corretorId: true } });
       try {
-        const v = await db.visita.create({ data: { imovelId, conversaId, corretorId: imovel.corretorId, dataHora, status: "pedida" }, select: { id: true } });
+        const v = await db.visita.create({ data: { imovelId, conversaId, corretorId: imovel.corretorId, dataHora, status: "pedida", observacao: observacao || null }, select: { id: true } });
         return { id: v.id };
       } catch (e) {
         if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {

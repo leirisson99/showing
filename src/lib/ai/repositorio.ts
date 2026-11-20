@@ -7,6 +7,8 @@ export type Lead = {
   email?: string;
   pagamento?: string;
   prazo?: string;
+  /** O que o comprador busca (salvar_contato). */
+  interesse?: string;
 };
 
 export type ImovelDoAtendimento = { id: string; status: "publicado" | "vendido" | "rascunho" };
@@ -30,8 +32,11 @@ export interface RepositorioAtendimento {
   /** Visitas `pedida` ou `confirmada` de qualquer imóvel do mesmo corretor. */
   visitasOcupadas(imovelId: string): Promise<Date[]>;
   buscarConversa(id: string): Promise<ConversaDoAtendimento | null>;
-  salvarLead(conversaId: string, lead: Lead, consentimentoEm: Date): Promise<void>;
-  criarVisita(dados: { imovelId: string; conversaId: string; dataHora: Date }): Promise<{ id: string }>;
+  /** Registra a resposta do comprador aos botões "Pode guardar" / "Prefiro não" (RN-11, RNF-13). Feito pelo servidor, nunca pelo modelo. */
+  registrarConsentimento(conversaId: string, aceito: boolean, em: Date): Promise<void>;
+  /** Junta os campos ao lead da conversa. Só chamado com consentimento já registrado. */
+  salvarLead(conversaId: string, lead: Partial<Lead>): Promise<void>;
+  criarVisita(dados: { imovelId: string; conversaId: string; dataHora: Date; observacao?: string }): Promise<{ id: string }>;
   marcarTransferida(conversaId: string, motivo: string): Promise<void>;
   /** Cria uma conversa nova e devolve o id (difícil de adivinhar: quem o tem é o comprador). */
   criarConversa(imovelId: string): Promise<string>;

@@ -6,7 +6,7 @@ import { ConversaTransferida } from "@/emails/conversa-transferida";
 import { PedidoRecebido } from "@/emails/pedido-recebido";
 import { VisitaAtualizada } from "@/emails/visita-atualizada";
 import { VisitaPedida } from "@/emails/visita-pedida";
-import { agendarVisita, registrarLead, transferirCorretor, type ContextoAtendimento } from "@/lib/ai/atendimento";
+import { pedirVisita, transferirParaCorretor, type ContextoAtendimento } from "@/lib/ai/atendimento";
 import { criarRepositorioMock } from "@/mocks/atendimento";
 import { disparar } from "./notificacoes";
 
@@ -35,13 +35,15 @@ describe("templates", () => {
   });
 });
 
+const COMPRADOR = { nome: "Maria", telefone: "(47) 99999-0000" };
+
 describe("disparos", () => {
   const AGORA = new Date("2026-11-18T12:00:00-03:00");
 
   async function pronto(extra: Partial<ContextoAtendimento>) {
     const { repo, conversaId } = criarRepositorioMock();
     const ctx: ContextoAtendimento = { imovelId: "mock-1", conversaId, repo, agora: () => AGORA, ...extra };
-    await registrarLead(ctx, { imovel_id: "mock-1", nome: "Maria", telefone: "(47) 99999-0000", consentimento: true });
+    await repo.registrarConsentimento(conversaId, true, AGORA);
     return ctx;
   }
 
@@ -49,24 +51,24 @@ describe("disparos", () => {
     const aoPedirVisita = vi.fn();
     const aoTransferir = vi.fn();
     const ctx = await pronto({ aoPedirVisita, aoTransferir });
-    const r = await agendarVisita(ctx, { imovel_id: "mock-1", data_hora: "2026-11-21T09:00:00-03:00" });
+    const r = await pedirVisita(ctx, { ...COMPRADOR, slot_id: "20261121-0900" });
     expect(r.ok).toBe(true);
     expect(aoPedirVisita).toHaveBeenCalledWith(r.ok && r.visita_id);
-    await transferirCorretor(ctx, { imovel_id: "mock-1", motivo: "Piscina" });
-    expect(aoTransferir).toHaveBeenCalledWith(ctx.conversaId, "Piscina");
+    await transferirParaCorretor(ctx, { motivo: "sem_resposta", resumo: "Piscina no prédio" });
+    expect(aoTransferir).toHaveBeenCalledWith(ctx.conversaId, "Pergunta sem resposta na ficha: Piscina no prédio");
   });
 
   it("não chama o gancho quando o agendamento é recusado", async () => {
     const aoPedirVisita = vi.fn();
     const ctx = await pronto({ aoPedirVisita });
-    expect((await agendarVisita(ctx, { imovel_id: "mock-1", data_hora: "2026-11-21T03:00:00-03:00" })).ok).toBe(false);
+    expect((await pedirVisita(ctx, { ...COMPRADOR, slot_id: "20261121-0300" })).ok).toBe(false);
     expect(aoPedirVisita).not.toHaveBeenCalled();
   });
 
   it("falha de envio não quebra nem desfaz a visita, e o log não leva dado pessoal", async () => {
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
     const ctx = await pronto({ aoPedirVisita: () => disparar(async () => { throw new Error("SMTP caiu para maria@exemplo.com"); }) });
-    const r = await agendarVisita(ctx, { imovel_id: "mock-1", data_hora: "2026-11-21T09:00:00-03:00" });
+    const r = await pedirVisita(ctx, { ...COMPRADOR, slot_id: "20261121-0900" });
     expect(r.ok).toBe(true);
     await new Promise((res) => setTimeout(res, 10));
     expect(log).toHaveBeenCalledWith("e-mail: falha ao enviar", { tipo: "Error" });

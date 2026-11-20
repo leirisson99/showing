@@ -24,9 +24,11 @@ const corpo = z.object({
   imovelId: z.string().min(1).max(100),
   conversaId: z.uuid().optional(),
   mensagem: z.string().trim().min(1, "Escreva uma mensagem.").max(500, "Mensagem muito longa."),
+  // Só os botões "Pode guardar" / "Prefiro não" da bolha mandam isto (RN-11). O modelo nunca registra o aceite.
+  consentimento: z.enum(["aceito", "recusado"]).optional(),
 });
 
-const PEDE_CONSENTIMENTO = /autoriz|consentiment|posso (guardar|registrar|anotar|passar)/i;
+const PEDE_CONSENTIMENTO = /autoriz|consentiment|posso (guardar|registrar|anotar|passar)|pode guardar|guardar (seus|os|meus) dados/i;
 
 const erro = (codigo: string, status: number, extra?: Record<string, unknown>) =>
   NextResponse.json({ erro: codigo, ...extra }, { status, headers: { "Cache-Control": "no-store" } });
@@ -97,6 +99,15 @@ export async function POST(request: Request) {
   }
   const idDaConversa = conversaId;
 
+  if (entrada.data.consentimento) await repo.registrarConsentimento(idDaConversa, entrada.data.consentimento === "aceito", new Date());
+  const jaTinhaContato = Boolean((await repo.buscarConversa(idDaConversa))?.lead);
+  let contatoContado = false;
+  const contarContato = () => {
+    if (jaTinhaContato || contatoContado) return;
+    contatoContado = true;
+    void registrarEvento("contato_capturado", imovel.id, idDaConversa);
+  };
+
   const historico = await repo.mensagensDaConversa(idDaConversa);
   const codificador = new TextEncoder();
 
@@ -133,6 +144,7 @@ export async function POST(request: Request) {
           ctx: {
             imovelId: imovel.id,
             conversaId: idDaConversa,
+            corretorNome: imovel.corretor.nome,
             repo,
             ...(notificacoesAtivas()
               ? {
@@ -142,14 +154,15 @@ export async function POST(request: Request) {
               : {}),
             observador: ({ ferramenta, resultado }: { ferramenta: string; resultado: Resultado }) => {
               if (!resultado.ok) return;
-              if (ferramenta === "registrar_lead") void registrarEvento("contato_capturado", imovel.id, idDaConversa);
-              if (ferramenta === "transferir_corretor") void registrarEvento("transferencia", imovel.id, idDaConversa);
-              if (ferramenta === "listar_horarios") {
-                const horarios = (resultado.horarios as { rotulo: string }[] | undefined) ?? [];
-                sugestoes = horarios.map((h) => h.rotulo);
+              if (ferramenta === "salvar_contato") contarContato();
+              if (ferramenta === "transferir_para_corretor") void registrarEvento("transferencia", imovel.id, idDaConversa);
+              if (ferramenta === "consultar_horarios") {
+                const horarios = (resultado.horarios as { dia: string; hora: string }[] | undefined) ?? [];
+                sugestoes = horarios.slice(0, 4).map((h) => `${h.dia}, às ${h.hora}`);
               }
-              if (ferramenta === "agendar_visita") {
+              if (ferramenta === "pedir_visita") {
                 sugestoes = undefined;
+                contarContato();
                 void registrarEvento("visita_pedida", imovel.id, idDaConversa);
                 if (typeof resultado.horario === "string") visita = { horario: resultado.horario };
               }

@@ -15,13 +15,16 @@ export class ErroApi extends Error {
   }
 }
 
-type Pedido = { imovelId: string; conversaId: string | null; mensagem: string; signal?: AbortSignal };
+/** `consentimento` só vai nos botões "Pode guardar" / "Prefiro não": quem grava o aceite é o servidor (RN-11). */
+export type Consentimento = "aceito" | "recusado";
 
-export async function* conversarComApi({ imovelId, conversaId, mensagem, signal }: Pedido): AsyncGenerator<EventoChat> {
+type Pedido = { imovelId: string; conversaId: string | null; mensagem: string; consentimento?: Consentimento; signal?: AbortSignal };
+
+export async function* conversarComApi({ imovelId, conversaId, mensagem, consentimento, signal }: Pedido): AsyncGenerator<EventoChat> {
   const resposta = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ imovelId, mensagem, ...(conversaId ? { conversaId } : {}) }),
+    body: JSON.stringify({ imovelId, mensagem, ...(conversaId ? { conversaId } : {}), ...(consentimento ? { consentimento } : {}) }),
     signal,
   });
 

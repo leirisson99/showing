@@ -31,7 +31,7 @@ export type ContextoMock = {
     areaM2: number;
     bairro: string;
   };
-  /** Horários livres já calculados (no atendente real vêm de listar_horarios). */
+  /** Horários livres já calculados (no atendente real vêm de consultar_horarios). */
   horarios: Horario[];
 };
 

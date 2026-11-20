@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { MessageCircle, Send, X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { BOTOES_CONSENTIMENTO } from "@/lib/ai/saudacao";
 import { registrarEventoUmaVez } from "@/lib/eventos-cliente";
 import { cn } from "@/lib/utils";
 import { CartaoVisita } from "./CartaoVisita";
@@ -212,7 +213,7 @@ export default function ChatBubble({ imovelId, tituloImovel, corretor, imovel, w
                   <li key={s}>
                     <button
                       type="button"
-                      onClick={() => void enviar(s)}
+                      onClick={() => void enviar(s, false, ultima?.pedeConsentimento ? (s === BOTOES_CONSENTIMENTO[0] ? "aceito" : "recusado") : undefined)}
                       className="min-h-11 rounded-full border border-primary bg-background px-4 text-sm text-primary hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
                     >
                       {s}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { criarRepositorioMock } from "@/mocks/atendimento";
-import { agendarVisita, listarHorarios, registrarLead, transferirCorretor, type ContextoAtendimento } from "./atendimento";
+import { consultarHorarios, pedirVisita, salvarContato, transferirParaCorretor, type ContextoAtendimento } from "./atendimento";
 import { criarTools } from "./tools";
 
 // Quarta-feira, 18/11/2026, 12:00 em São Paulo.
@@ -8,189 +8,225 @@ const AGORA = new Date("2026-11-18T12:00:00-03:00");
 
 function montar(opcoes: Parameters<typeof criarRepositorioMock>[0] = {}, imovelId = "mock-1", agora = AGORA) {
   const { repo, conversaId, estado } = criarRepositorioMock(opcoes);
-  const ctx: ContextoAtendimento = { imovelId, conversaId, repo, agora: () => agora };
-  return { ctx, estado };
+  const ctx: ContextoAtendimento = { imovelId, conversaId, repo, agora: () => agora, corretorNome: "Ana Corretora" };
+  return { ctx, estado, repo };
 }
 
-const lead = { imovel_id: "mock-1", nome: "Maria Souza", telefone: "(47) 99999-0000", consentimento: true };
+/** Os botões "Pode guardar" da bolha gravam o aceite no servidor, fora do modelo. */
+async function aceitar(ctx: ContextoAtendimento) {
+  await ctx.repo.registrarConsentimento(ctx.conversaId, true, AGORA);
+}
 
-async function horarios(ctx: ContextoAtendimento) {
-  const r = await listarHorarios(ctx, { imovel_id: ctx.imovelId });
+const comprador = { nome: "Maria Souza", telefone: "(47) 99999-0000" };
+
+async function horarios(ctx: ContextoAtendimento, entrada: unknown = {}) {
+  const r = await consultarHorarios(ctx, entrada);
   if (!r.ok) throw new Error(r.erro);
-  return r.horarios as { data_hora: string; rotulo: string }[];
+  return r.horarios as { slot_id: string; dia: string; hora: string }[];
 }
 
-describe("listar_horarios", () => {
-  it("devolve só os horários do corretor, em ordem, com fuso de São Paulo", async () => {
+describe("consultar_horarios", () => {
+  it("devolve até 6 horários do corretor, em ordem, com slot_id, dia e hora de São Paulo", async () => {
     const { ctx } = montar();
     const lista = await horarios(ctx);
-    expect(lista.map((h) => h.data_hora)).toEqual([
-      "2026-11-21T09:00:00-03:00",
-      "2026-11-21T10:00:00-03:00",
-      "2026-11-21T11:00:00-03:00",
-      "2026-11-22T10:00:00-03:00",
-      "2026-11-28T09:00:00-03:00",
-      "2026-11-28T10:00:00-03:00",
-      "2026-11-28T11:00:00-03:00",
-      "2026-11-29T10:00:00-03:00",
-    ]);
-    expect(lista[0].rotulo).toBe("sábado, 21/11, às 09:00");
+    expect(lista).toHaveLength(6);
+    expect(lista[0]).toEqual({ slot_id: "20261121-0900", dia: "sábado, 21/11", hora: "09:00" });
+    expect(lista.map((h) => h.slot_id).slice(0, 4)).toEqual(["20261121-0900", "20261121-1000", "20261121-1100", "20261122-1000"]);
+    expect(Object.keys(lista[0]).sort()).toEqual(["dia", "hora", "slot_id"]);
+  });
+
+  it("a_partir_de começa naquele dia", async () => {
+    const { ctx } = montar();
+    const lista = await horarios(ctx, { a_partir_de: "2026-11-28" });
+    expect(lista[0].slot_id).toBe("20261128-0900");
+    expect(lista.every((h) => h.slot_id >= "20261128")).toBe(true);
+  });
+
+  it("recusa data malformada sem lançar erro", async () => {
+    const { ctx } = montar();
+    expect(await consultarHorarios(ctx, { a_partir_de: "amanhã" })).toMatchObject({ ok: false });
   });
 
   it("exige 12 horas de antecedência (RN-18)", async () => {
-    // Sábado 00:00: 09h, 10h e 11h ficam a menos de 12 h.
     const { ctx } = montar({}, "mock-1", new Date("2026-11-21T00:00:00-03:00"));
-    const lista = await horarios(ctx);
-    expect(lista[0].data_hora).toBe("2026-11-22T10:00:00-03:00");
+    expect((await horarios(ctx))[0].slot_id).toBe("20261122-1000");
   });
 
   it("não passa de 14 dias à frente (RN-18)", async () => {
     const { ctx } = montar({ horariosVisita: { sab: ["09:00"] } });
-    const lista = await horarios(ctx);
-    // 21/11 e 28/11 entram; 05/12 está a 17 dias.
-    expect(lista.map((h) => h.data_hora)).toEqual(["2026-11-21T09:00:00-03:00", "2026-11-28T09:00:00-03:00"]);
+    expect((await horarios(ctx)).map((h) => h.slot_id)).toEqual(["20261121-0900", "20261128-0900"]);
   });
 
   it("tira horários que conflitam com visitas pedidas ou confirmadas (RN-17)", async () => {
     const { ctx } = montar({ ocupados: [new Date("2026-11-21T10:00:00-03:00")] });
-    const lista = (await horarios(ctx)).map((h) => h.data_hora);
-    expect(lista).not.toContain("2026-11-21T10:00:00-03:00");
-    expect(lista).toContain("2026-11-21T09:00:00-03:00");
-    expect(lista).toContain("2026-11-21T11:00:00-03:00");
+    const ids = (await horarios(ctx)).map((h) => h.slot_id);
+    expect(ids).not.toContain("20261121-1000");
+    expect(ids).toContain("20261121-0900");
   });
 
   it("avisa quando não há horário livre", async () => {
     const { ctx } = montar({ horariosVisita: {} });
-    const r = await listarHorarios(ctx, { imovel_id: "mock-1" });
-    expect(r).toMatchObject({ ok: true, horarios: [] });
+    expect(await consultarHorarios(ctx, {})).toEqual({ ok: true, horarios: [], aviso: "Sem horários livres nos próximos dias" });
   });
 });
 
 describe("conferência do imóvel (RNF-07)", () => {
-  it("recusa imóvel vendido", async () => {
-    const { ctx } = montar({}, "mock-2");
-    expect(await listarHorarios(ctx, { imovel_id: "mock-2" })).toMatchObject({ ok: false });
-  });
-
-  it("recusa imóvel que não existe", async () => {
-    const { ctx } = montar({}, "nao-existe");
-    expect(await listarHorarios(ctx, { imovel_id: "nao-existe" })).toMatchObject({ ok: false });
-  });
-
-  it("recusa imovel_id diferente do da conversa", async () => {
-    const { ctx } = montar();
-    expect(await listarHorarios(ctx, { imovel_id: "mock-2" })).toMatchObject({ ok: false });
+  it("recusa imóvel vendido e imóvel que não existe", async () => {
+    expect(await consultarHorarios(montar({}, "mock-2").ctx, {})).toMatchObject({ ok: false });
+    expect(await consultarHorarios(montar({}, "nao-existe").ctx, {})).toMatchObject({ ok: false });
   });
 
   it("recusa argumentos inválidos sem lançar erro", async () => {
     const { ctx } = montar();
-    for (const entrada of [undefined, null, {}, { imovel_id: 42 }, "texto"]) {
-      expect(await listarHorarios(ctx, entrada)).toMatchObject({ ok: false });
+    for (const entrada of ["texto", 42, { a_partir_de: 5 }]) {
+      expect(await consultarHorarios(ctx, entrada)).toMatchObject({ ok: false });
+    }
+    for (const entrada of [undefined, null, {}, { slot_id: 1 }, "texto"]) {
+      expect(await pedirVisita(ctx, entrada)).toMatchObject({ ok: false });
+      expect(await transferirParaCorretor(ctx, entrada)).toMatchObject({ ok: false });
     }
   });
 });
 
-describe("registrar_lead", () => {
-  it("grava nome e contato com consentimento", async () => {
+describe("salvar_contato", () => {
+  it("grava os dados com o aceite registrado e junta chamadas seguidas", async () => {
     const { ctx, estado } = montar();
-    expect(await registrarLead(ctx, lead)).toEqual({ ok: true });
-    const c = estado.conversas.get(ctx.conversaId);
-    expect(c?.consentimento).toBe(true);
-    expect(c?.lead).toMatchObject({ nome: "Maria Souza", telefone: "47999990000" });
+    await aceitar(ctx);
+    expect(await salvarContato(ctx, { nome: "Maria Souza", telefone: "(47) 99999-0000" })).toEqual({ ok: true, mensagem: "Contato salvo" });
+    expect(await salvarContato(ctx, { email: "maria@exemplo.com", forma_pagamento: "financiamento", interesse: "2 quartos até 500 mil" })).toMatchObject({ ok: true });
+    expect(estado.conversas.get(ctx.conversaId)?.lead).toEqual({
+      nome: "Maria Souza",
+      telefone: "47999990000",
+      email: "maria@exemplo.com",
+      pagamento: "financiamento",
+      interesse: "2 quartos até 500 mil",
+    });
   });
 
-  it("não grava sem consentimento (RN-11)", async () => {
+  it("não grava sem consentimento e manda o modelo não insistir (RN-11)", async () => {
     const { ctx, estado } = montar();
-    for (const consentimento of [false, undefined, "sim"]) {
-      expect(await registrarLead(ctx, { ...lead, consentimento })).toMatchObject({ ok: false });
-    }
+    const r = await salvarContato(ctx, comprador);
+    expect(r).toMatchObject({ ok: false });
+    expect(!r.ok && r.erro).toMatch(/^Sem consentimento: não salve dados\./);
+    expect(!r.ok && r.erro).toMatch(/não insista/);
     expect(estado.conversas.get(ctx.conversaId)?.lead).toBeNull();
   });
 
-  it("exige telefone ou e-mail", async () => {
-    const { ctx } = montar();
-    expect(await registrarLead(ctx, { imovel_id: "mock-1", nome: "Maria", consentimento: true })).toMatchObject({ ok: false });
+  it("recusar nos botões desliga o aceite que já existia", async () => {
+    const { ctx, estado } = montar();
+    await aceitar(ctx);
+    await ctx.repo.registrarConsentimento(ctx.conversaId, false, AGORA);
+    expect(await salvarContato(ctx, comprador)).toMatchObject({ ok: false });
+    expect(estado.conversas.get(ctx.conversaId)?.consentimentoEm).toBeNull();
   });
 
-  it("recusa telefone e e-mail inválidos", async () => {
+  it("exige ao menos um dado e valida telefone e e-mail", async () => {
     const { ctx } = montar();
-    expect(await registrarLead(ctx, { ...lead, telefone: "123" })).toMatchObject({ ok: false });
-    expect(await registrarLead(ctx, { ...lead, telefone: undefined, email: "isso-nao-e-email" })).toMatchObject({ ok: false });
+    await aceitar(ctx);
+    for (const entrada of [{}, { telefone: "123" }, { email: "isso-nao-e-email" }, { forma_pagamento: "pix" }]) {
+      expect(await salvarContato(ctx, entrada)).toMatchObject({ ok: false });
+    }
+  });
+
+  it("dá um nome padrão quando só chega o telefone", async () => {
+    const { ctx, estado } = montar();
+    await aceitar(ctx);
+    await salvarContato(ctx, { telefone: "47999990000" });
+    expect(estado.conversas.get(ctx.conversaId)?.lead?.nome).toBe("Comprador");
   });
 });
 
-describe("agendar_visita", () => {
-  const livre = "2026-11-21T10:00:00-03:00";
+describe("pedir_visita", () => {
+  const slot = "20261121-1000";
+  const pedido = { slot_id: slot, ...comprador };
 
-  it("não agenda sem nome e contato registrados (RN-12)", async () => {
+  it("sem o aceite registrado não grava nada e manda o modelo pedir pelos botões (RN-11)", async () => {
     const { ctx, estado } = montar();
-    const r = await agendarVisita(ctx, { imovel_id: "mock-1", data_hora: livre });
+    const r = await pedirVisita(ctx, pedido);
     expect(r).toMatchObject({ ok: false });
+    expect(!r.ok && r.erro).toMatch(/Sem consentimento/);
     expect(estado.visitas).toHaveLength(0);
+    expect(estado.conversas.get(ctx.conversaId)?.lead).toBeNull();
   });
 
-  it("agenda em horário livre e a visita nasce pedida (RN-20)", async () => {
+  it("pede a visita, guarda o comprador e ela nasce pedida (RN-20)", async () => {
     const { ctx, estado } = montar();
-    await registrarLead(ctx, lead);
-    const r = await agendarVisita(ctx, { imovel_id: "mock-1", data_hora: livre });
-    expect(r).toMatchObject({ ok: true, status: "pedida" });
+    await aceitar(ctx);
+    const r = await pedirVisita(ctx, { ...pedido, forma_pagamento: "FGTS", observacao: "Prefere de manhã" });
+    expect(r).toMatchObject({ ok: true, status: "pedida", dia: "sábado, 21/11", hora: "10:00", horario: "sábado, 21/11, às 10:00" });
     expect(estado.visitas).toHaveLength(1);
-    expect(estado.visitas[0].dataHora.toISOString()).toBe(new Date(livre).toISOString());
+    expect(estado.visitas[0]).toMatchObject({ status: "pedida" });
+    expect(estado.visitas[0].dataHora.toISOString()).toBe(new Date("2026-11-21T10:00:00-03:00").toISOString());
+    expect(estado.conversas.get(ctx.conversaId)?.lead).toMatchObject({ nome: "Maria Souza", telefone: "47999990000", pagamento: "FGTS" });
   });
 
-  it("recusa horário fora da lista (RN-17)", async () => {
+  it("a resposta nunca diz que a visita está confirmada", async () => {
+    const { ctx } = montar();
+    await aceitar(ctx);
+    const r = await pedirVisita(ctx, pedido);
+    expect(JSON.stringify(r)).toMatch(/Ainda não está confirmado/);
+  });
+
+  it("recusa slot que não foi oferecido (RN-17, RN-18)", async () => {
     const { ctx, estado } = montar();
-    await registrarLead(ctx, lead);
-    for (const data_hora of [
-      "2026-11-24T10:00:00-03:00", // terça: o corretor não atende
-      "2026-11-21T03:00:00-03:00", // madrugada
-      "2026-11-21T10:30:00-03:00", // meia hora fora da grade
-      "2026-11-18T10:00:00-03:00", // passado
-      "2026-12-05T09:00:00-03:00", // além de 14 dias
-      "amanhã às 10",
-    ]) {
-      expect(await agendarVisita(ctx, { imovel_id: "mock-1", data_hora })).toMatchObject({ ok: false });
+    await aceitar(ctx);
+    for (const slot_id of ["20261124-1000", "20261121-0300", "20261121-1030", "20261118-1000", "20261205-0900", "amanhã às 10", "2026-11-21T10:00:00-03:00"]) {
+      expect(await pedirVisita(ctx, { ...pedido, slot_id })).toEqual({ ok: false, erro: "Horário ocupado, consulte os horários de novo." });
     }
     expect(estado.visitas).toHaveLength(0);
   });
 
   it("recusa horário já ocupado", async () => {
-    const { ctx } = montar({ ocupados: [new Date(livre)] });
-    await registrarLead(ctx, lead);
-    expect(await agendarVisita(ctx, { imovel_id: "mock-1", data_hora: livre })).toMatchObject({ ok: false });
+    const { ctx } = montar({ ocupados: [new Date("2026-11-21T10:00:00-03:00")] });
+    await aceitar(ctx);
+    expect(await pedirVisita(ctx, pedido)).toMatchObject({ ok: false, erro: "Horário ocupado, consulte os horários de novo." });
+  });
+
+  it("exige nome e telefone válidos", async () => {
+    const { ctx } = montar();
+    await aceitar(ctx);
+    expect(await pedirVisita(ctx, { slot_id: slot, nome: "Maria" })).toMatchObject({ ok: false });
+    expect(await pedirVisita(ctx, { ...pedido, telefone: "123" })).toMatchObject({ ok: false });
+    expect(await pedirVisita(ctx, { ...pedido, forma_pagamento: "pix" })).toMatchObject({ ok: false });
   });
 
   it("permite no máximo uma visita por conversa (RN-19)", async () => {
     const { ctx, estado } = montar();
-    await registrarLead(ctx, lead);
-    expect(await agendarVisita(ctx, { imovel_id: "mock-1", data_hora: livre })).toMatchObject({ ok: true });
-    expect(
-      await agendarVisita(ctx, { imovel_id: "mock-1", data_hora: "2026-11-21T11:00:00-03:00" }),
-    ).toMatchObject({ ok: false });
+    await aceitar(ctx);
+    expect(await pedirVisita(ctx, pedido)).toMatchObject({ ok: true });
+    expect(await pedirVisita(ctx, { ...pedido, slot_id: "20261121-1100" })).toMatchObject({ ok: false });
     expect(estado.visitas).toHaveLength(1);
   });
 });
 
-describe("transferir_corretor", () => {
-  it("marca a conversa como transferida e guarda a pergunta pendente", async () => {
+describe("transferir_para_corretor", () => {
+  it("marca a conversa como transferida com o motivo e o resumo e responde com o nome do corretor", async () => {
     const { ctx, estado } = montar();
-    expect(await transferirCorretor(ctx, { imovel_id: "mock-1", motivo: "Pergunta sobre piscina no prédio" })).toEqual({ ok: true });
+    const r = await transferirParaCorretor(ctx, { motivo: "sem_resposta", resumo: "Quer saber se tem piscina no prédio" });
+    expect(r).toEqual({ ok: true, mensagem: "Conversa transferida para Ana Corretora" });
     expect(estado.conversas.get(ctx.conversaId)?.transferida).toBe(true);
-    expect(estado.motivos).toEqual(["Pergunta sobre piscina no prédio"]);
+    expect(estado.motivos).toEqual(["Pergunta sem resposta na ficha: Quer saber se tem piscina no prédio"]);
   });
 
-  it("exige motivo", async () => {
+  it("aceita os quatro motivos e recusa outros", async () => {
+    for (const motivo of ["sem_resposta", "pedido_do_comprador", "negociacao", "reclamacao"]) {
+      expect(await transferirParaCorretor(montar().ctx, { motivo, resumo: "Resumo da conversa" })).toMatchObject({ ok: true });
+    }
     const { ctx, estado } = montar();
-    expect(await transferirCorretor(ctx, { imovel_id: "mock-1", motivo: " " })).toMatchObject({ ok: false });
+    expect(await transferirParaCorretor(ctx, { motivo: "outro", resumo: "Resumo" })).toMatchObject({ ok: false });
+    expect(await transferirParaCorretor(ctx, { motivo: "negociacao", resumo: " " })).toMatchObject({ ok: false });
     expect(estado.conversas.get(ctx.conversaId)?.transferida).toBe(false);
   });
 });
 
 describe("tools do Strands", () => {
-  it("expõe as quatro ferramentas com esquema JSON válido", () => {
+  it("expõe as quatro ferramentas com esquema JSON válido e sem pedir o imóvel ao modelo", () => {
     const { ctx } = montar();
     const tools = criarTools(ctx);
-    expect(tools.map((t) => t.name)).toEqual(["listar_horarios", "registrar_lead", "agendar_visita", "transferir_corretor"]);
-    for (const t of tools) expect(t.toolSpec.inputSchema).toBeDefined();
+    expect(tools.map((t) => t.name)).toEqual(["consultar_horarios", "pedir_visita", "salvar_contato", "transferir_para_corretor"]);
+    for (const t of tools) {
+      expect(t.toolSpec.inputSchema).toBeDefined();
+      expect(JSON.stringify(t.toolSpec.inputSchema)).not.toContain("imovel_id");
+    }
   });
 });

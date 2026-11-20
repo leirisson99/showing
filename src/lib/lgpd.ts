@@ -42,7 +42,7 @@ export function anonimizarMensagens(mensagens: MessageData[], lead: Lead | null)
     ...m,
     content: m.content.map((bloco) => {
       if ("text" in bloco && typeof bloco.text === "string") return { ...bloco, text: redigirTexto(bloco.text, lead) };
-      if ("toolUse" in bloco && bloco.toolUse.name === "registrar_lead") return { toolUse: { ...bloco.toolUse, input: {} } };
+      if ("toolUse" in bloco && ["registrar_lead", "salvar_contato", "pedir_visita"].includes(bloco.toolUse.name)) return { toolUse: { ...bloco.toolUse, input: {} } };
       if ("toolUse" in bloco) return { toolUse: { ...bloco.toolUse, input: redigirJson(bloco.toolUse.input, lead) as never } };
       if ("toolResult" in bloco) {
         return {

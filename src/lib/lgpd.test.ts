@@ -68,7 +68,8 @@ describe("pedido de exclusão no painel (memória)", () => {
       { role: "user", content: [{ text: `Sou a Maria Souza, ${email}` }] },
       { role: "assistant", content: [{ text: "Oi, Maria! Posso guardar seus dados?" }] },
     ]);
-    await repo.salvarLead(id, { nome: "Maria Souza", email }, new Date());
+    await repo.registrarConsentimento(id, true, new Date());
+    await repo.salvarLead(id, { nome: "Maria Souza", email });
     return id;
   }
 

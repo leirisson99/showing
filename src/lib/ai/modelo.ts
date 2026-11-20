@@ -22,7 +22,10 @@ export function criarModelo(): Model {
     apiKey,
     // Respostas curtas e estáveis: o atendente só repete dados da ficha.
     temperature: 0.3,
-    maxTokens: 1500, // folga para modelos que raciocinam antes de responder
+    maxTokens: 3000, // folga para modelos que raciocinam antes de responder e chamar ferramenta
+    // OpenRouter: pouco raciocínio. O atendente segue regras fixas; sem isto alguns modelos gastam
+    // todo o limite pensando e a resposta vem vazia (MaxTokensError).
+    params: { reasoning: { effort: "low" } },
     clientConfig: {
       baseURL: process.env.AI_BASE_URL || URL_PADRAO,
       // Identifica o app no OpenRouter. Só nome e endereço públicos do site.
