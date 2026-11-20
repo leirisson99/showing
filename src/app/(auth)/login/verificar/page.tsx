@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { z } from "zod";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Logo } from "@/components/brand/Logo";
+import { Mail } from "lucide-react";
+import { loginSchema } from "@/lib/auth-schema";
 import { Reenviar } from "./reenviar";
+import { TituloFocado } from "./titulo-focado";
 
 export const metadata: Metadata = {
   title: "Veja seu e-mail — Showing",
@@ -13,43 +13,43 @@ export const metadata: Metadata = {
 
 export default function VerificarPage({ searchParams }: PageProps<"/login/verificar">) {
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-6 px-4 py-12">
-      <Link href="/" aria-label="Showing, página inicial" className="mx-auto text-primary">
-        <Logo />
-      </Link>
-      <Suspense>
-        <Conteudo searchParams={searchParams} />
-      </Suspense>
-    </main>
+    <Suspense fallback={null}>
+      <Conteudo searchParams={searchParams} />
+    </Suspense>
   );
 }
 
 async function Conteudo({ searchParams }: Pick<PageProps<"/login/verificar">, "searchParams">) {
   const { email: bruto } = await searchParams;
-  const email = z.email().safeParse(bruto);
+  const email = loginSchema.safeParse({ email: bruto });
 
   return (
-    <Card className="w-full rounded-3xl p-2">
-      <CardHeader>
-        <CardTitle className="text-xl">Veja seu e-mail</CardTitle>
-        <CardDescription>
+    <div className="auth-entra mx-auto flex w-full max-w-95 flex-col gap-6">
+      <span className="flex size-14 items-center justify-center rounded-full bg-(--auth-primary-soft) text-(--auth-primary)">
+        <Mail className="size-[26px]" aria-hidden />
+      </span>
+      <div className="flex flex-col gap-1.5">
+        <TituloFocado>Veja seu e-mail</TituloFocado>
+        <p className="text-(--auth-ink)">
           {email.success ? (
             <>
-              Se <strong>{email.data}</strong> for de um corretor cadastrado, enviamos um link de
-              acesso.
+              Enviamos um link para <strong className="font-semibold break-all">{email.data.email}</strong>. Abra no mesmo aparelho.
             </>
           ) : (
-            "Se o e-mail for de um corretor cadastrado, enviamos um link de acesso."
-          )}{" "}
-          Abra no mesmo aparelho em que você pediu.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        {email.success && <Reenviar email={email.data} />}
-        <Link href="/login" className="text-sm text-muted-foreground underline underline-offset-4">
+            "Enviamos um link para o seu e-mail. Abra no mesmo aparelho."
+          )}
+        </p>
+        <p className="text-sm text-(--auth-ink-muted)">Não chegou? Olhe a caixa de spam antes de pedir outro.</p>
+      </div>
+      <div className="flex flex-col gap-2">
+        {email.success && <Reenviar email={email.data.email} />}
+        <Link
+          href="/login"
+          className="inline-flex min-h-11 items-center justify-center text-[15px] font-medium text-(--auth-primary) underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--auth-primary)"
+        >
           Usar outro e-mail
         </Link>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

@@ -107,6 +107,7 @@ Acompanhamento de execução dos cards de [cards.md](cards.md). Este arquivo reg
 | Data | Mudança |
 | --- | --- |
 | 2026-11-20 | Cards do backend movidos para `card-back.md` (BK-01 a BK-10); C5 e E3 passam para lá. |
+| 2026-11-20 | Telas `/login` e `/login/verificar` refeitas a partir do design "Tela de login do Showing" (Claude Design): layout dividido com painel de história (3 mensagens, avanço a cada 6 s, pausa com mouse/foco/aba escondida, sem avanço com movimento reduzido), formulário de um campo com validação no cliente (mesmo schema Zod do servidor), estados erro/enviando/verificar, reenvio após 60 s, no máximo 5 pedidos por e-mail e por IP por hora, e redirecionamento de quem já está logado. Fontes Space Grotesk e Inter só nesse layout. |
 | 2026-11-19 | Arquivo criado a partir de `cards.md`. Nenhum card novo concluído desde a base. |
 | 2026-11-19 | A1 implementado (PARCIAL): falta testar o fluxo completo com banco e SMTP configurados. |
 | 2026-11-20 | A2 implementado com mocks (PARCIAL): `/painel/perfil`, horários do perfil alimentam o atendente, perfil real na página pública, publicar exige perfil completo. Bolha de chat: ao chegar a 30 mensagens do comprador (ou aviso do servidor) o campo some, aparece o aviso com o link do WhatsApp do corretor (se houver) e o foco vai para ele; lógica em `limite.ts`, 4 testes. `typecheck`, `lint`, `build` e 96 testes passam. Não conferido em navegador. |
