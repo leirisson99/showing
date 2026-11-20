@@ -3,6 +3,7 @@ import Link from "next/link";
 import { botaoEscuro } from "@/components/site/estilos";
 import { CabecalhoSite } from "@/components/site/CabecalhoSite";
 import { RodapeSite } from "@/components/site/RodapeSite";
+import { retencaoDias } from "@/lib/lgpd";
 
 export const metadata: Metadata = {
   title: "Política de privacidade — Showing",
@@ -91,8 +92,9 @@ export default function PrivacidadePage() {
       titulo: "Por quanto tempo guardamos",
       conteudo: (
         <p>
-          Enquanto o piloto durar e até você pedir a exclusão. O prazo de guarda depois do piloto será definido e publicado aqui antes de o
-          serviço ser aberto ao público.
+          Guardamos a conversa por até {retencaoDias()} dias depois da última mensagem. Passado esse prazo, apagamos seu nome, seus contatos e
+          o que você tenha escrito que identifique você; o restante da conversa pode ser mantido sem identificar ninguém. Se houver uma visita
+          marcada, os dados ficam até ela acontecer. Você pode pedir a exclusão antes disso.
         </p>
       ),
     },

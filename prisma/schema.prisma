@@ -170,6 +170,8 @@ model Conversa {
   motivoTransferencia String?
   // Quando o corretor marcou a transferência como lida (painel).
   lidaEm              DateTime?
+  // Quando os dados pessoais foram removidos (pedido do comprador ou fim do prazo de guarda, RN-24).
+  anonimizadaEm       DateTime?
   // Controle de concorrência: salvarMensagens só grava se a versão não mudou.
   versao              Int            @default(0)
   status              StatusConversa @default(ativa)

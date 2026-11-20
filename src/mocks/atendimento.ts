@@ -15,6 +15,8 @@ export type ConversaMock = ConversaDoAtendimento & {
   motivo: string | null;
   /** Quando o corretor marcou a transferência como lida. */
   lidaEm: Date | null;
+  /** Quando os dados pessoais foram removidos (RN-24). */
+  anonimizadaEm: Date | null;
 };
 
 export type VisitaMock = {
@@ -62,6 +64,7 @@ export function criarRepositorioMock(opcoes: Opcoes = {}) {
       consentimentoEm: null,
       motivo: null,
       lidaEm: null,
+      anonimizadaEm: null,
     };
   };
 

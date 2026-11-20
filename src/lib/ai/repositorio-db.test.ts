@@ -206,3 +206,60 @@ describe.skipIf(!temBanco)("métricas no Prisma", () => {
     }
   });
 });
+
+describe.skipIf(!temBanco)("LGPD no Prisma", () => {
+  it("anonimiza a pedido e pelo prazo de guarda, poupando visita por acontecer (RN-24, RN-23)", async () => {
+    const { db } = await import("@/lib/db");
+    const { anonimizarConversa, buscarConversaDoCorretor } = await import("@/lib/painel/atendimentos-db");
+    const { aplicarRetencao } = await import("@/lib/retencao");
+    const sufixo = `l${Date.now().toString(36)}`;
+    const dono = await db.user.create({ data: { email: `dono-${sufixo}@teste.local`, name: "Dono" } });
+    const outro = await db.user.create({ data: { email: `outro-${sufixo}@teste.local`, name: "Outro" } });
+    const imovel = await db.imovel.create({
+      data: { corretorId: dono.id, slug: `l-${sufixo}`, tipo: "casa", finalidade: "venda", titulo: "Casa LGPD", descricao: "d", bairro: "T", preco: 1, quartos: 1, banheiros: 1, vagas: 0, areaM2: 1, aceitaFinanciamento: true, status: "publicado" },
+    });
+    const dados = (extra: object = {}) => ({
+      imovelId: imovel.id,
+      perfilLead: { nome: "Maria Souza", telefone: "47999990000", email: `maria-${sufixo}@exemplo.com` },
+      consentimento: true,
+      consentimentoEm: new Date(),
+      mensagens: [
+        { role: "user", content: [{ text: `Sou Maria Souza, ligue 47999990000` }] },
+        { role: "assistant", content: [{ toolUse: { name: "registrar_lead", toolUseId: "1", input: { nome: "Maria Souza", telefone: "47999990000" } } }] },
+      ],
+      ...extra,
+    });
+    try {
+      // 1) pedido do comprador
+      const a = await db.conversa.create({ data: dados() });
+      expect((await anonimizarConversa(outro.id, a.id)).ok).toBe(false);
+      expect((await db.conversa.findUniqueOrThrow({ where: { id: a.id } })).consentimento).toBe(true);
+      expect(await anonimizarConversa(dono.id, a.id)).toEqual({ ok: true });
+      const depois = await db.conversa.findUniqueOrThrow({ where: { id: a.id } });
+      expect(depois).toMatchObject({ perfilLead: null, consentimento: false, consentimentoEm: null, versao: 1 });
+      expect(depois.anonimizadaEm).toBeInstanceOf(Date);
+      expect(JSON.stringify(depois.mensagens)).not.toMatch(/Maria|Souza|47999990000/);
+      expect(JSON.stringify(depois)).not.toContain(`maria-${sufixo}`);
+      expect((await buscarConversaDoCorretor(dono.id, a.id))?.conversa.anonimizadaEm).toBeInstanceOf(Date);
+
+      // 2) prazo de guarda: velha anonimiza, recente fica, velha com visita futura fica
+      const velha = await db.conversa.create({ data: dados() });
+      const recente = await db.conversa.create({ data: dados() });
+      const comVisita = await db.conversa.create({ data: dados() });
+      await db.visita.create({ data: { imovelId: imovel.id, conversaId: comVisita.id, corretorId: dono.id, dataHora: new Date("2030-01-01T12:00:00Z"), status: "confirmada" } });
+      const longe = new Date(Date.now() - 400 * 24 * 60 * 60 * 1000);
+      await db.$executeRaw`UPDATE "Conversa" SET "atualizadaEm" = ${longe} WHERE id IN (${velha.id}, ${comVisita.id})`;
+
+      const r = await aplicarRetencao(new Date(), 180, [imovel.id]);
+      expect(r.anonimizadas).toBe(1);
+      const estado = async (id: string) => (await db.conversa.findUniqueOrThrow({ where: { id } })).anonimizadaEm !== null;
+      expect(await estado(velha.id)).toBe(true);
+      expect(await estado(recente.id)).toBe(false);
+      expect(await estado(comVisita.id)).toBe(false);
+      expect((await aplicarRetencao(new Date(), 180, [imovel.id])).anonimizadas).toBe(0); // idempotente
+    } finally {
+      await db.imovel.deleteMany({ where: { corretorId: dono.id } });
+      await db.user.deleteMany({ where: { id: { in: [dono.id, outro.id] } } });
+    }
+  });
+});

@@ -5,6 +5,7 @@ import { ArrowLeft, Mail, Phone, TriangleAlert } from "lucide-react";
 import { MarcarComoLida } from "@/components/painel/AcaoDeConversa";
 import { BadgeVisita } from "@/components/painel/BadgeVisita";
 import { CabecalhoPagina } from "@/components/painel/CabecalhoPagina";
+import { ExcluirDadosComprador } from "@/components/painel/ExcluirDadosComprador";
 import { formatarDataHora, formatarTelefone } from "@/lib/format";
 import { buscarConversaDoCorretor } from "@/lib/painel/atendimentos";
 import { exigirCorretor } from "@/lib/session";
@@ -98,8 +99,13 @@ export default async function ConversaPage({ params }: PageProps<"/painel/conver
                 )}
               </dl>
             ) : (
-              <p className="text-muted-foreground">O comprador não informou contato (ou não autorizou guardar os dados).</p>
+              <p className="text-muted-foreground">
+                {conversa.anonimizadaEm
+                  ? `Dados pessoais removidos em ${formatarDataHora(conversa.anonimizadaEm)}.`
+                  : "O comprador não informou contato (ou não autorizou guardar os dados)."}
+              </p>
             )}
+            {!conversa.anonimizadaEm && <ExcluirDadosComprador tipo="conversa" id={conversa.id} />}
           </section>
 
           {conversa.visita && (

@@ -35,6 +35,8 @@ export type ConversaPainel = {
   naoLida: boolean;
   lead: Lead | null;
   consentimentoEm: Date | null;
+  /** Dados pessoais já removidos (RN-24). */
+  anonimizadaEm: Date | null;
   visita: { id: string; status: StatusVisita; dataHora: Date } | null;
 };
 
@@ -158,6 +160,22 @@ export async function listarClientes(corretorId: string): Promise<ClientePainel[
 
 export async function buscarCliente(corretorId: string, clienteId: string): Promise<ClientePainel | null> {
   return (await listarClientes(corretorId)).find((c) => c.id === clienteId) ?? null;
+}
+
+/** RN-24: remove nome, contato, consentimento e dado pessoal do texto da conversa. As mensagens ficam. */
+export async function anonimizarConversa(corretorId: string, conversaId: string): Promise<Resultado> {
+  return (await repo()).anonimizarConversa(corretorId, conversaId);
+}
+
+/** Anonimiza todas as conversas do cliente (mesmo telefone ou e-mail). */
+export async function anonimizarCliente(corretorId: string, clienteId: string): Promise<Resultado> {
+  const cliente = await buscarCliente(corretorId, clienteId);
+  if (!cliente) return { ok: false, erro: "Cliente não encontrado." };
+  for (const id of cliente.conversaIds) {
+    const r = await anonimizarConversa(corretorId, id);
+    if (!r.ok) return r;
+  }
+  return { ok: true };
 }
 
 export async function contarNaoLidas(corretorId: string): Promise<number> {

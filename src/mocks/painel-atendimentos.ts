@@ -1,3 +1,4 @@
+import { anonimizarMensagens, redigirTexto } from "@/lib/lgpd";
 import { textoSaudacao } from "@/lib/ai/saudacao";
 import type { Resultado } from "@/lib/painel/imoveis";
 import { TRANSICOES, textoDaMensagem, type ConversaPainel, type MensagemLida, type StatusVisita, type VisitaPainel } from "@/lib/painel/atendimentos";
@@ -58,6 +59,7 @@ function paraConversaPainel(c: ConversaMock, titulo: string): ConversaPainel {
     naoLida: c.transferida && c.lidaEm === null,
     lead: c.consentimento ? c.lead : null, // RN-11: dado pessoal só depois do consentimento
     consentimentoEm: c.consentimentoEm,
+    anonimizadaEm: c.anonimizadaEm,
     visita: visita ? { id: visita.id, status: visita.status, dataHora: visita.dataHora } : null,
   };
 }
@@ -97,3 +99,16 @@ export async function marcarConversaLida(corretorId: string, conversaId: string)
   return { ok: true };
 }
 
+
+export async function anonimizarConversa(corretorId: string, conversaId: string): Promise<Resultado> {
+  const c = estadoAtendimentoMock().conversas.get(conversaId);
+  if (!c || !titulosDoCorretor(corretorId).has(c.imovelId)) return { ok: false, erro: "Conversa não encontrada." };
+  const { historicos } = estadoAtendimentoMock();
+  historicos.set(conversaId, anonimizarMensagens(historicos.get(conversaId) ?? [], c.lead));
+  c.motivo = c.motivo ? redigirTexto(c.motivo, c.lead) : null;
+  c.lead = null;
+  c.consentimento = false;
+  c.consentimentoEm = null;
+  c.anonimizadaEm = new Date();
+  return { ok: true };
+}

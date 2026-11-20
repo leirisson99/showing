@@ -2,6 +2,7 @@ import type { MessageData } from "@strands-agents/sdk";
 import type { Lead } from "@/lib/ai/repositorio";
 import { textoSaudacao } from "@/lib/ai/saudacao";
 import { db } from "@/lib/db";
+import { anonimizarConversaNoBanco } from "@/lib/retencao";
 import type { Resultado } from "./imoveis";
 import { TRANSICOES, textoDaMensagem, type ConversaPainel, type MensagemLida, type StatusVisita, type VisitaPainel } from "./atendimentos";
 
@@ -15,7 +16,7 @@ const incluirConversa = { imovel: { select: { titulo: true } }, visita: { select
 
 type LinhaConversa = {
   id: string; imovelId: string; criadaEm: Date; atualizadaEm: Date; mensagens: unknown; transferida: boolean; motivoTransferencia: string | null;
-  lidaEm: Date | null; perfilLead: unknown; consentimento: boolean; consentimentoEm: Date | null;
+  lidaEm: Date | null; anonimizadaEm: Date | null; perfilLead: unknown; consentimento: boolean; consentimentoEm: Date | null;
   imovel: { titulo: string }; visita: { id: string; status: StatusVisita; dataHora: Date } | null;
 };
 
@@ -35,6 +36,7 @@ function paraConversaPainel(c: LinhaConversa): ConversaPainel {
     naoLida: c.transferida && c.lidaEm === null,
     lead: c.consentimento ? ((c.perfilLead as Lead | null) ?? null) : null, // RN-11
     consentimentoEm: c.consentimentoEm,
+    anonimizadaEm: c.anonimizadaEm,
     visita: c.visita,
   };
 }
@@ -97,5 +99,12 @@ export async function marcarConversaLida(corretorId: string, conversaId: string)
   if (!c) return { ok: false, erro: "Conversa não encontrada." };
   // Mantém `atualizadaEm`: marcar como lida não reordena a lista de conversas.
   await db.conversa.update({ where: { id: conversaId }, data: { lidaEm: new Date(), atualizadaEm: c.atualizadaEm } });
+  return { ok: true };
+}
+
+export async function anonimizarConversa(corretorId: string, conversaId: string): Promise<Resultado> {
+  const c = await db.conversa.findFirst({ where: { id: conversaId, ...doCorretor(corretorId) }, select: { id: true } });
+  if (!c) return { ok: false, erro: "Conversa não encontrada." };
+  await anonimizarConversaNoBanco(conversaId);
   return { ok: true };
 }

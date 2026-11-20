@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Mail, Phone } from "lucide-react";
 import { BadgeVisita } from "@/components/painel/BadgeVisita";
 import { CabecalhoPagina } from "@/components/painel/CabecalhoPagina";
+import { ExcluirDadosComprador } from "@/components/painel/ExcluirDadosComprador";
 import { formatarDataHora, formatarTelefone } from "@/lib/format";
 import { buscarCliente, buscarConversaDoCorretor } from "@/lib/painel/atendimentos";
 import { exigirCorretor } from "@/lib/session";
@@ -103,6 +104,14 @@ export default async function ClientePage({ params }: PageProps<"/painel/cliente
             </li>
           ))}
         </ul>
+      </section>
+
+      <section aria-labelledby="privacidade" className="flex flex-col gap-3 rounded-3xl bg-card p-5 ring-1 ring-foreground/10">
+        <h2 id="privacidade" className="text-xl font-medium">Privacidade</h2>
+        <p className="text-sm text-muted-foreground">
+          Se este comprador pediu para apagar os dados dele, faça aqui. Vale para todas as conversas dele com os seus imóveis.
+        </p>
+        <ExcluirDadosComprador tipo="cliente" id={cliente.id} />
       </section>
     </main>
   );

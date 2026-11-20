@@ -22,7 +22,7 @@ Tudo o que falta para tirar o Showing dos dados de exemplo (`USAR_MOCKS=1`) e co
 | BK-05 Métricas no Prisma | P | PRONTO | BK-03, BK-04 |
 | BK-06 Fotos no Appwrite | M | PARCIAL | BK-03 |
 | BK-07 E-mails de visita e transferência (C5) | M | PRONTO | BK-04 |
-| BK-08 Privacidade e LGPD no backend | M | A FAZER | BK-04 |
+| BK-08 Privacidade e LGPD no backend | M | PRONTO | BK-04 |
 | BK-09 Atendente em produção (modelo e custo) | M | A FAZER | BK-04 |
 | BK-10 Deploy e qualidade (E3) | M | A FAZER | todos |
 
@@ -112,12 +112,15 @@ Nodemailer com Gmail (senha de app), só com `EMAIL_USER`, `EMAIL_APP_PASSWORD` 
 - **Teste real:** `pnpm tsx scripts/test-email.ts <seu-email>` envia os 4 e-mails de exemplo; os 4 saíram para a caixa de teste em 2026-11-20.
 - **Limites:** envio único, sem reenvio automático (RNF-20); o Gmail limita cerca de 500 por dia, suficiente para o piloto. Em hospedagem serverless o envio sem `await` pode ser cortado quando a resposta termina: se for o caso, trocar `disparar()` por `after()` do Next.
 
-## BK-08 · Privacidade e LGPD no backend — M
+## BK-08 · Privacidade e LGPD no backend — PRONTO (2026-11-20)
 
-- Definir o prazo de guarda dos dados do comprador e aplicar (job ou rotina de limpeza).
-- Exclusão a pedido (RN-24): apagar conversa, lead e visita do comprador.
-- Revisão do texto de `/privacidade` por uma pessoa de confiança antes do piloto (RNF-14); definir `NEXT_PUBLIC_EMAIL_PRIVACIDADE`.
-- Conferir que nenhum dado pessoal vai para log ou analytics.
+- **Anonimização (RN-24):** `anonimizarConversa` apaga `perfilLead`, o consentimento (e sua data) e tira nome, e-mail e telefone do texto das mensagens e do motivo da transferência (`src/lib/lgpd.ts`: e-mail, telefone em vários formatos e o nome informado, inteiro ou por partes; os argumentos de `registrar_lead` no histórico do agente são esvaziados). A conversa e as visitas ficam, sem identificar o comprador; nova coluna `Conversa.anonimizadaEm` (migration `20261120123442_conversa_anonimizada`) e `versao` incrementada para uma resposta em andamento não desfazer a limpeza. Preço, área e palavras parecidas com o nome não são tocados.
+- **Pedido do comprador:** ele escreve para o contato da `/privacidade` (ou para o corretor) e o corretor executa no painel: botão **Excluir dados do comprador** na conversa (uma conversa) e na página do cliente (todas as conversas do mesmo telefone ou e-mail), com confirmação. Só conversas de imóveis dele (RN-23).
+- **Prazo de guarda:** padrão de **180 dias sem atividade** (`RETENCAO_DIAS` muda; a `/privacidade` mostra o valor configurado). `aplicarRetencao` anonimiza o que passou do prazo, poupa conversa com visita ainda pedida ou confirmada, e é idempotente. Roda por `pnpm retencao` ou por `POST /api/cron/retencao` com `Authorization: Bearer <CRON_SECRET>` (sem `CRON_SECRET` a rota responde 404); agendar uma chamada diária no deploy (BK-10).
+- **Logs:** conferido: os 3 `console.error` e o `console.info` da retenção levam só tipo de erro ou contagem.
+- **Testes:** `lgpd.test.ts` (redação, prazo, pedido de exclusão em memória) e 2 de integração com o Postgres (pedido e prazo de guarda, só com dados do próprio teste). 145 testes, `typecheck`, `lint` e `build` passam; e2e do painel passa.
+
+**Decisão sua:** o prazo de 180 dias é um valor inicial meu, escolhido por ser curto para um piloto de 4 semanas; mude `RETENCAO_DIAS` se preferir outro. **Ainda falta** a revisão do texto da `/privacidade` por uma pessoa de confiança antes do piloto (RNF-14) e definir `NEXT_PUBLIC_EMAIL_PRIVACIDADE`.
 
 ## BK-09 · Atendente em produção (modelo e custo) — M
 
