@@ -46,6 +46,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       });
       return corretor !== null;
     },
+    // Com JWT o id do corretor não vai para a sessão sozinho: sem ele `exigirCorretor` não acha
+    // o usuário e manda de volta ao login (laço depois do link mágico).
+    jwt({ token, user }) {
+      if (user?.id) token.sub = user.id;
+      return token;
+    },
+    session({ session, token }) {
+      if (token.sub) session.user.id = token.sub;
+      return session;
+    },
     authorized({ auth, request }) {
       if (usarMocks()) return true;
       if (request.nextUrl.pathname.startsWith("/painel")) return !!auth?.user;

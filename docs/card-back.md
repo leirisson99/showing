@@ -60,6 +60,8 @@ Schema revisado contra o que as telas e o atendente precisam. Nova migration `20
 - `/painel` sem sessão responde 307 para `/login`.
 - Pedir o link no formulário grava o token em `VerificationToken`, chama o Gmail sem erro e leva a `/login/verificar` ("Veja seu e-mail", reenvio em 60 s), sem erro de console. E-mail desconhecido recebe a mesma resposta.
 
+**Corrigido (laço depois do link):** com sessão JWT o `id` do corretor não ia para a sessão, então `exigirCorretor` não achava o usuário e mandava de volta ao `/login`. `src/auth.ts` ganhou os callbacks `jwt` e `session` que copiam o id. Comprovado com um token de login gerado direto no banco: sem a correção `/painel` manda ao login, com ela renderiza a visão geral.
+
 **Falta (só você consegue):** abrir o e-mail "Seu link de acesso ao Showing", clicar (no mesmo navegador, o link vale 15 min e uma vez) e conferir que cai em `/painel` com o imóvel de exemplo e o botão Sair. O link aponta para `NEXT_PUBLIC_SITE_URL` (`http://localhost:3000`).
 - Em seguida testar o upload de foto pelo painel (BK-06) e uma conversa pela bolha com a IA real, vendo a visita no painel e o e-mail chegando.
 
