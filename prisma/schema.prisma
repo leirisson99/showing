@@ -160,7 +160,7 @@ model Foto {
 }
 
 model Conversa {
-  id                  String         @id @default(cuid())
+  id                  String         @id @default(uuid()) // difícil de adivinhar: quem o tem é o comprador
   imovelId            String
   mensagens           Json           @default("[]")
   perfilLead          Json?

@@ -269,6 +269,10 @@ describe("GET /api/chat (retomar a conversa)", () => {
     expect((await lerConversa({ imovelId: "mock-1", conversaId })).json.encerrada).toBe(true);
   });
 
+  it("aceita o id no formato cuid das conversas antigas (responde 404, não 400)", async () => {
+    expect((await lerConversa({ imovelId: "mock-1", conversaId: "cmwp00u0j0004mcslbfo7lwel" })).status).toBe(404);
+  });
+
   it("recusa pedido inválido, conversa inexistente e conversa de outro imóvel", async () => {
     expect((await lerConversa({ imovelId: "mock-1", conversaId: "nao-e-uuid" })).status).toBe(400);
     expect((await lerConversa({ imovelId: "mock-1", conversaId: crypto.randomUUID() })).status).toBe(404);

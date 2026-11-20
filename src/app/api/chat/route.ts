@@ -20,9 +20,12 @@ import { dentroDoLimite } from "@/lib/rate-limit";
 
 const UM_MINUTO = 60_000;
 
+// Conversas novas usam UUID; as criadas antes disso (cuid do Prisma) continuam valendo.
+const idDaConversa = z.string().regex(/^(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|c[a-z0-9]{20,30})$/i, "Conversa inválida");
+
 const corpo = z.object({
   imovelId: z.string().min(1).max(100),
-  conversaId: z.uuid().optional(),
+  conversaId: idDaConversa.optional(),
   mensagem: z.string().trim().min(1, "Escreva uma mensagem.").max(500, "Mensagem muito longa."),
   // Só os botões "Pode guardar" / "Prefiro não" da bolha mandam isto (RN-11). O modelo nunca registra o aceite.
   consentimento: z.enum(["aceito", "recusado"]).optional(),
@@ -42,7 +45,7 @@ function contarMensagensDoComprador(mensagens: MessageData[]): number {
   return mensagens.filter((m) => m.role === "user" && m.content.some((c) => "text" in c)).length;
 }
 
-const consulta = z.object({ imovelId: z.string().min(1).max(100), conversaId: z.uuid() });
+const consulta = z.object({ imovelId: z.string().min(1).max(100), conversaId: idDaConversa });
 
 // Retomar a conversa (RF-17): devolve só o texto das mensagens, sem chamadas de ferramenta.
 // O navegador guarda apenas o id da conversa; o histórico vive no servidor. O id é difícil de
