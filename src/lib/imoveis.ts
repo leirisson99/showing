@@ -1,7 +1,8 @@
 import { urlDaFoto } from "@/lib/fotos";
-import { perfis } from "@/mocks/corretor";
+import { usarMocks } from "@/lib/mocks";
+import { buscarPerfil } from "@/lib/painel/perfil";
 import type { ImovelPainel } from "@/lib/painel/tipos";
-import { store } from "@/mocks/painel";
+import type { PerfilCorretor } from "@/mocks/corretor";
 
 export type FotoPublica = { src: string; alt: string; legenda: string | null };
 
@@ -51,14 +52,25 @@ export type ImovelPublico = {
   corretor: CorretorPublico;
 };
 
-// TODO(backend): trocar o store em memória por consultas Prisma. Só este arquivo e
-// src/lib/painel/imoveis.ts mudam; a página e os componentes dependem dos tipos acima.
-// Regras a manter: só `publicado` e `vendido` (RN-01, RN-04); rascunho = null.
-// Em produção `urlDaFoto` usa o Appwrite; inclua o host em `images.remotePatterns`.
+// Leituras públicas. Com USAR_MOCKS=1 vêm da memória; senão, do Prisma (painel/imoveis-db.ts).
+// Só `publicado` e `vendido` (RN-01, RN-04); rascunho = null. Em produção `urlDaFoto` usa o
+// Appwrite: o host precisa estar em `images.remotePatterns`.
+
+const fonte = async () => {
+  if (!usarMocks()) return await import("@/lib/painel/imoveis-db");
+  const { store } = await import("@/mocks/painel");
+  return {
+    buscarPublicoPorSlug: async (slug: string) => store().imoveis.find((x) => x.slug === slug && x.status !== "rascunho") ?? null,
+    buscarPublicoPorId: async (id: string) => store().imoveis.find((x) => x.id === id && x.status !== "rascunho") ?? null,
+    listarSlugs: async (soPublicados: boolean) =>
+      store()
+        .imoveis.filter((i) => (soPublicados ? i.status === "publicado" : i.status !== "rascunho"))
+        .map((i) => i.slug),
+  };
+};
 
 // Só nome, CRECI, WhatsApp e foto do corretor vão para a página (nunca e-mail nem id).
-function corretorPublico(corretorId: string): CorretorPublico {
-  const p = perfis().get(corretorId);
+function corretorPublico(p: PerfilCorretor | null): CorretorPublico {
   return {
     nome: p?.nome?.trim() || "Corretor",
     creci: p?.creci?.trim() || "",
@@ -68,7 +80,7 @@ function corretorPublico(corretorId: string): CorretorPublico {
 }
 
 // Lista explícita do que vai para a página: nada de id do corretor ou dados internos.
-function paraPublico(i: ImovelPainel): ImovelPublico {
+function paraPublico(i: ImovelPainel, corretor: CorretorPublico): ImovelPublico {
   return {
     id: i.id,
     slug: i.slug,
@@ -104,34 +116,32 @@ function paraPublico(i: ImovelPainel): ImovelPublico {
         alt: f.legenda ? `${f.legenda} — ${i.titulo}` : `Foto ${n + 1} do ${i.titulo}`,
         legenda: f.legenda,
       })),
-    corretor: corretorPublico(i.corretorId),
+    corretor,
   };
 }
 
+async function montar(i: ImovelPainel | null): Promise<ImovelPublico | null> {
+  return i ? paraPublico(i, corretorPublico(await buscarPerfil(i.corretorId))) : null;
+}
+
 /** Visão pública de qualquer status (usada só na pré-visualização do corretor). */
-export function imovelParaPagina(i: ImovelPainel): ImovelPublico {
-  return paraPublico(i);
+export async function imovelParaPagina(i: ImovelPainel): Promise<ImovelPublico> {
+  return paraPublico(i, corretorPublico(await buscarPerfil(i.corretorId)));
 }
 
 export async function buscarImovelPublico(slug: string): Promise<ImovelPublico | null> {
-  const i = store().imoveis.find((x) => x.slug === slug && x.status !== "rascunho");
-  return i ? paraPublico(i) : null;
+  return montar(await (await fonte()).buscarPublicoPorSlug(slug));
 }
 
 export async function buscarImovelPublicoPorId(id: string): Promise<ImovelPublico | null> {
-  const i = store().imoveis.find((x) => x.id === id && x.status !== "rascunho");
-  return i ? paraPublico(i) : null;
+  return montar(await (await fonte()).buscarPublicoPorId(id));
 }
 
 /** Só os publicados (os vendidos ficam fora do sitemap e do llms.txt, RN-04). */
 export async function listarSlugsIndexaveis(): Promise<string[]> {
-  return store()
-    .imoveis.filter((i) => i.status === "publicado")
-    .map((i) => i.slug);
+  return (await fonte()).listarSlugs(true);
 }
 
 export async function listarSlugsPublicos(): Promise<string[]> {
-  return store()
-    .imoveis.filter((i) => i.status !== "rascunho")
-    .map((i) => i.slug);
+  return (await fonte()).listarSlugs(false);
 }

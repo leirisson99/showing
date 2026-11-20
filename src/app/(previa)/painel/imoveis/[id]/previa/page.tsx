@@ -20,7 +20,7 @@ export default async function PreviaPage({ params }: PageProps<"/painel/imoveis/
 
   return (
     <PaginaImovel
-      imovel={imovelParaPagina(imovel)}
+      imovel={await imovelParaPagina(imovel)}
       faixa={<FaixaPrevia imovelId={imovel.id} rascunho={imovel.status === "rascunho"} podePublicar={podePublicar} />}
     />
   );

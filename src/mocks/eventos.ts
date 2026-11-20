@@ -1,4 +1,4 @@
-import { usarMocks } from "@/lib/mocks";
+import { semearExemplos } from "@/lib/mocks";
 import { estadoAtendimentoMock } from "./atendimento";
 import { store } from "./painel";
 
@@ -12,7 +12,7 @@ export type EventoMock = { tipo: TipoEvento; imovelId: string; conversaId: strin
 const g = globalThis as unknown as { __showingEventos?: EventoMock[] };
 
 function semear(): EventoMock[] {
-  if (!usarMocks()) return [];
+  if (!semearExemplos()) return [];
   const agora = Date.now();
   const dia = 24 * 60 * 60 * 1000;
   const eventos: EventoMock[] = [];

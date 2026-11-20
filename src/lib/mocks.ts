@@ -9,3 +9,8 @@ export const CORRETOR_MOCK = {
   email: "corretor@exemplo.com",
   name: "Corretor de Exemplo" as string | null,
 };
+
+/** Dados de exemplo (conversas, visitas, eventos) só no desenvolvimento; os testes partem da memória vazia. */
+export function semearExemplos(): boolean {
+  return usarMocks() && !process.env.VITEST;
+}

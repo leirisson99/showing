@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { MessageData } from "@strands-agents/sdk";
 import { calcularHorariosLivres, type HorariosVisita } from "@/lib/ai/horarios";
 import type { ConversaDoAtendimento, ImovelDoAtendimento, Lead, RepositorioAtendimento } from "@/lib/ai/repositorio";
-import { usarMocks } from "@/lib/mocks";
+import { semearExemplos } from "@/lib/mocks";
 import { perfis } from "./corretor";
 import { store } from "./painel";
 
@@ -206,7 +206,7 @@ function instancia(): Instancia {
         return { horariosVisita: perfil?.horariosVisita ?? {}, duracaoMin: perfil?.duracaoVisitaMin ?? 60 };
       },
     });
-    if (usarMocks()) semear(g.__showingAtendimento);
+    if (semearExemplos()) semear(g.__showingAtendimento);
   }
   return g.__showingAtendimento;
 }

@@ -7,5 +7,7 @@ export default defineConfig({
   },
   test: {
     include: ["src/**/*.test.ts"],
+    // Os testes de regra rodam sobre os mocks em memória, sem banco.
+    env: { USAR_MOCKS: "1" },
   },
 });
