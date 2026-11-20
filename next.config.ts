@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // O e2e (playwright.config.ts) usa outro diretório para não brigar com o `pnpm dev` aberto.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   /* config options here */
   cacheComponents: true,
   partialPrefetching: true,

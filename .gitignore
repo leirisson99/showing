@@ -46,3 +46,10 @@ next-env.d.ts
 
 # fotos enviadas com USAR_MOCKS=1
 /public/mock-uploads
+
+# e2e (Playwright)
+/.next-e2e/
+/e2e/capturas/
+/e2e/resultados/
+/e2e/relatorio/
+/test-results/
