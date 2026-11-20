@@ -95,7 +95,9 @@ export function Hero() {
             <span className={`size-2 rounded-full bg-(--auth-success-ink) ${mover ? "lp-pulsa" : ""}`} />
             Piloto aberto para corretores
           </span>
-          <h1 className="font-[family-name:var(--font-display)] text-[40px] leading-[1.04] font-bold tracking-[-0.03em] sm:text-[52px] lg:text-[60px]">
+          {/* O h1 que leitores de tela e buscadores leem é uma frase só; o título animado ao lado é a mesma frase, só visual. */}
+          <h1 className="sr-only">Seu imóvel atende sozinho enquanto você está dormindo, dirigindo ou em outra visita.</h1>
+          <p aria-hidden className="font-[family-name:var(--font-display)] text-[40px] leading-[1.04] font-bold tracking-[-0.03em] sm:text-[52px] lg:text-[60px]">
             {PALAVRAS.map((t, i) => (
               <span
                 key={t}
@@ -116,7 +118,6 @@ export function Hero() {
                 return (
                   <span
                     key={c.frase}
-                    aria-hidden={i === ciclo ? undefined : true}
                     className="absolute top-0 left-0 whitespace-nowrap"
                     style={{ transform: `translateY(${mover ? pos : 0}%)`, opacity: i === (mover ? ciclo : 0) ? 1 : 0, transition: "transform .6s cubic-bezier(.2,.7,.2,1), opacity .6s" }}
                   >
@@ -125,7 +126,7 @@ export function Hero() {
                 );
               })}
             </span>
-          </h1>
+          </p>
           <p className="max-w-[46ch] text-lg leading-relaxed text-(--auth-ink-muted) lg:text-xl">
             O Showing transforma as fotos do imóvel numa página com um assistente que responde compradores na hora e marca visitas na sua agenda.
           </p>

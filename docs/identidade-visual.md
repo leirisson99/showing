@@ -47,7 +47,7 @@ Texto sobre fundo escuro: branco, ou branco a 75 a 85% para apoio.
 
 ## Tipografia
 
-Manrope em títulos e texto; Cormorant Garamond só no nome da marca. Títulos com `tracking-tight` e `text-balance`. Rótulos de seção em caixa alta, bronze (`text-cta`), 14 px, semibold.
+Manrope em títulos e texto (Cormorant Garamond saiu: a logo nova usa Manrope). A página inicial e o login usam Space Grotesk e Inter, do design de vendas. Títulos com `tracking-tight` e `text-balance`. Rótulos de seção em caixa alta, bronze (`text-cta`), 14 px, semibold.
 
 ## Linguagem e tom
 

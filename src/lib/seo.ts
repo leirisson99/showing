@@ -63,6 +63,31 @@ export function jsonLdImovel(i: DadosJsonLd) {
   };
 }
 
+/**
+ * JSON-LD da página inicial: a organização, o site e o serviço. Sem FAQPage (o Google aposentou o
+ * resultado enriquecido) e sem preço, porque o piloto não cobra.
+ */
+export function jsonLdSite(descricao: string) {
+  const url = urlDoSite();
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      { "@type": "Organization", "@id": `${url}/#organizacao`, name: "Showing", url, description: descricao, areaServed: { "@type": "City", name: "Blumenau" } },
+      { "@type": "WebSite", "@id": `${url}/#site`, url, name: "Showing", inLanguage: "pt-BR", publisher: { "@id": `${url}/#organizacao` } },
+      {
+        "@type": "SoftwareApplication",
+        name: "Showing",
+        applicationCategory: "BusinessApplication",
+        operatingSystem: "Web",
+        description: descricao,
+        inLanguage: "pt-BR",
+        url,
+        provider: { "@id": `${url}/#organizacao` },
+      },
+    ],
+  };
+}
+
 /** Serializa o JSON-LD para dentro de um <script>: o caractere menor-que é escapado, então nenhum título fecha a tag. */
 export function serializarJsonLd(dados: object): string {
   return JSON.stringify(dados)

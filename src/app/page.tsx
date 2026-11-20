@@ -11,12 +11,19 @@ import { Piloto } from "@/components/landing/Piloto";
 import { Problema } from "@/components/landing/Problema";
 import { Virada } from "@/components/landing/Virada";
 import { Faq, type ItemFaq } from "@/components/site/Faq";
+import { jsonLdSite, serializarJsonLd } from "@/lib/seo";
+
+const TITULO = "Showing — assistente virtual para corretores de imóveis";
+const DESCRICAO =
+  "Para corretores de imóveis: cadastre o imóvel e receba uma página exclusiva com um atendente virtual que conversa com o comprador e agenda a visita.";
 
 export const metadata: Metadata = {
-  title: "Showing — página do imóvel com atendente virtual",
-  description:
-    "Cadastre o imóvel e receba uma página exclusiva com um atendente virtual que conversa com o comprador e agenda a visita.",
+  title: TITULO,
+  description: DESCRICAO,
   alternates: { canonical: "/" },
+  // A imagem vem de opengraph-image.tsx e twitter-image.tsx, ao lado deste arquivo.
+  openGraph: { type: "website", locale: "pt_BR", siteName: "Showing", url: "/", title: TITULO, description: DESCRICAO },
+  twitter: { card: "summary_large_image", title: TITULO, description: DESCRICAO },
 };
 
 const PERGUNTAS: ItemFaq[] = [
@@ -48,6 +55,7 @@ const PERGUNTAS: ItemFaq[] = [
 export default function Home() {
   return (
     <div className={`${fonteDisplay.variable} ${fonteTexto.variable} tema-marca font-[family-name:var(--font-inter)] text-(--auth-ink)`}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializarJsonLd(jsonLdSite(DESCRICAO)) }} />
       <Cabecalho />
       <main>
         <Hero />

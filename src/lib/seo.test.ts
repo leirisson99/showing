@@ -52,3 +52,13 @@ describe("serializarJsonLd", () => {
     expect(JSON.parse(saida).name).toBe("</script><script>alert(1)</script>");
   });
 });
+
+describe("jsonLdSite", () => {
+  it("descreve organização, site e serviço, sem FAQPage nem preço", async () => {
+    const { jsonLdSite } = await import("./seo");
+    const g = jsonLdSite("Descrição do serviço")["@graph"];
+    expect(g.map((n) => n["@type"])).toEqual(["Organization", "WebSite", "SoftwareApplication"]);
+    expect(JSON.stringify(g)).not.toMatch(/FAQPage|offers|price/);
+    expect(g[1]).toMatchObject({ inLanguage: "pt-BR", publisher: { "@id": expect.stringContaining("#organizacao") } });
+  });
+});
