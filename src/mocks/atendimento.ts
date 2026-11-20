@@ -3,6 +3,7 @@ import type { MessageData } from "@strands-agents/sdk";
 import { calcularHorariosLivres, type HorariosVisita } from "@/lib/ai/horarios";
 import type { ConversaDoAtendimento, ImovelDoAtendimento, Lead, RepositorioAtendimento } from "@/lib/ai/repositorio";
 import { usarMocks } from "@/lib/mocks";
+import { perfis } from "./corretor";
 import { store } from "./painel";
 
 export type StatusVisitaMock = "pedida" | "confirmada" | "realizada" | "cancelada";
@@ -24,6 +25,8 @@ export type VisitaMock = {
 };
 
 type Opcoes = {
+  /** Horários e duração por imóvel; sem isto vale `horariosVisita`/`duracaoMin` (testes). */
+  horariosDoImovel?: (imovelId: string) => { horariosVisita: HorariosVisita; duracaoMin: number };
   horariosVisita?: HorariosVisita;
   duracaoMin?: number;
   ocupados?: Date[];
@@ -89,8 +92,8 @@ export function criarRepositorioMock(opcoes: Opcoes = {}) {
       const i = store().imoveis.find((x) => x.id === id);
       return i ? { id: i.id, status: i.status } : null;
     },
-    async horariosDoCorretor() {
-      return { horariosVisita, duracaoMin: opcoes.duracaoMin ?? 60 };
+    async horariosDoCorretor(imovelId) {
+      return opcoes.horariosDoImovel?.(imovelId) ?? { horariosVisita, duracaoMin: opcoes.duracaoMin ?? 60 };
     },
     // RN-17: só visitas pedidas ou confirmadas ocupam horário; cancelada e realizada liberam.
     async visitasOcupadas() {
@@ -191,7 +194,14 @@ const g = globalThis as unknown as { __showingAtendimento?: Instancia };
 
 function instancia(): Instancia {
   if (!g.__showingAtendimento) {
-    g.__showingAtendimento = criarRepositorioMock();
+    g.__showingAtendimento = criarRepositorioMock({
+      // Horários e duração da visita vêm do perfil do corretor dono do imóvel.
+      horariosDoImovel: (imovelId) => {
+        const dono = store().imoveis.find((i) => i.id === imovelId)?.corretorId;
+        const perfil = dono ? perfis().get(dono) : undefined;
+        return { horariosVisita: perfil?.horariosVisita ?? {}, duracaoMin: perfil?.duracaoVisitaMin ?? 60 };
+      },
+    });
     if (usarMocks()) semear(g.__showingAtendimento);
   }
   return g.__showingAtendimento;

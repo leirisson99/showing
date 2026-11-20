@@ -16,7 +16,7 @@ Acompanhamento de execução dos cards de [cards.md](cards.md). Este arquivo reg
 | Fase | Cards | PRONTO | PARCIAL | A FAZER |
 | --- | --- | --- | --- | --- |
 | Base (P) | P-01 a P-11 | 8 | 3 | 0 |
-| A — Acesso do corretor | A1, A2 | 0 | 1 | 1 |
+| A — Acesso do corretor | A1, A2 | 0 | 2 | 0 |
 | B — Imóvel e página pública | B1 a B4 | 0 | 4 | 0 |
 | C — Atendente IA e bolha (foco) | C1 a C6 | 0 | 5 | 1 |
 | D — Acompanhamento | D1 a D3 | 0 | 2 | 1 |
@@ -51,7 +51,7 @@ Acompanhamento de execução dos cards de [cards.md](cards.md). Este arquivo reg
 | Card | Tam. | Status | Observações |
 | --- | --- | --- | --- |
 | A1 Login por link mágico | M | PARCIAL | Implementado em 2026-11-19: Auth.js com provider de e-mail próprio (envio por `src/lib/email.ts`), sessão JWT, `proxy.ts` protegendo `/painel/*`, páginas `/login` e `/login/verificar` (reenvio após 60 s), template `src/emails/link-de-acesso.tsx`, `exigirCorretor()` em `src/lib/session.ts` e `/painel` mínimo com "Sair". Só e-mails de corretores já cadastrados entram, e a resposta é a mesma para e-mail desconhecido. `typecheck`, `lint` e `build` passam; `/painel` sem sessão redireciona para `/login`. **Falta** o teste ponta a ponta (pedir link, receber, entrar): `DATABASE_URL` e `SMTP_*` estão vazios no `.env` local. |
-| A2 Perfil do corretor | P | A FAZER | Depende de A1. Os horários de visita alimentam a ferramenta `listar_horarios` (C2), então o formato salvo deve ser definido junto com ela. |
+| A2 Perfil do corretor | P | PARCIAL | **Tela pronta com dados de exemplo** (2026-11-20): `/painel/perfil` com nome, CRECI, WhatsApp, foto (envio pela rota `/api/upload` com `alvo=perfil`, apagando a anterior) e horários de visita por dia da semana (`SeletorHorarios`) com a duração da visita. Validação com Zod no formulário e na Server Action. **Os horários e a duração do perfil são os que o atendente oferece** (RN-17), e nome, CRECI, WhatsApp e foto aparecem na página pública do imóvel (sem e-mail nem id). Publicar um imóvel exige nome e CRECI no perfil; a visão geral avisa quando faltam. 10 testes novos. **Falta:** ligar ao Prisma (campos do `User` já existem); testar o envio de foto no Appwrite real. |
 
 ## Fase B — Imóvel e página pública
 
@@ -106,6 +106,7 @@ Acompanhamento de execução dos cards de [cards.md](cards.md). Este arquivo reg
 | --- | --- |
 | 2026-11-19 | Arquivo criado a partir de `cards.md`. Nenhum card novo concluído desde a base. |
 | 2026-11-19 | A1 implementado (PARCIAL): falta testar o fluxo completo com banco e SMTP configurados. |
+| 2026-11-20 | A2 implementado com mocks (PARCIAL): `/painel/perfil`, horários do perfil alimentam o atendente, perfil real na página pública, publicar exige perfil completo. Bolha de chat: ao chegar a 30 mensagens do comprador (ou aviso do servidor) o campo some, aparece o aviso com o link do WhatsApp do corretor (se houver) e o foco vai para ele; lógica em `limite.ts`, 4 testes. `typecheck`, `lint`, `build` e 96 testes passam. Não conferido em navegador. |
 | 2026-11-20 | **Novo visual a partir dos modelos de `layouts/`**: paleta creme, verde-floresta e bronze, fontes Manrope e Cormorant (só a marca), raio 16 px. Página do imóvel refeita no formato do modelo 2 (hero com foto, cartões sobrepostos, sobre o imóvel, ficha técnica, destaques numerados, FAQ montado com os dados do anúncio, local, galeria em grade, faixa de chamada, rodapé); página inicial refeita (hero, cartões, apresentação, história "Como funciona", faixa escura do atendente, FAQ de corretores, chamada final); login e cabeçalho do painel restilizados. Blocos em `src/components/site/`. Docs `identidade-visual.md` e `pages.md` atualizados. `typecheck`, `lint`, `build` e 82 testes passam. **Não conferido em navegador.** |
 | 2026-11-20 | Chaves de IA configuradas: 7 casos ao vivo passaram, rota `/api/chat` verificada de ponta a ponta com o modelo real. `maxTokens` subiu de 600 para 1500 (modelo que raciocina estourava). |
 | 2026-11-20 | Tela de clientes: `/painel/clientes` (lista com busca e filtro por visita) e `/painel/clientes/[id]` (contato, perfil, consentimento, visitas e conversas). Conversas com o mesmo telefone ou e-mail viram um cliente; só entram compradores que autorizaram guardar os dados; o id da URL é opaco. 12 testes nessa camada; `typecheck`, `lint` e `build` passam. Não conferida em navegador. |

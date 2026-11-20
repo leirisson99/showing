@@ -3,11 +3,12 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { CORRETOR_MOCK, usarMocks } from "@/lib/mocks";
+import { perfis } from "@/mocks/corretor";
 
 // Corretor logado. Toda consulta do painel parte do id devolvido aqui (RN-07).
 export const exigirCorretor = cache(async () => {
   // USAR_MOCKS=1 (só em desenvolvimento): corretor fixo, sem login.
-  if (usarMocks()) return CORRETOR_MOCK;
+  if (usarMocks()) return { ...CORRETOR_MOCK, name: perfis().get(CORRETOR_MOCK.id)?.nome ?? null };
 
   const session = await auth();
   const id = session?.user?.id;

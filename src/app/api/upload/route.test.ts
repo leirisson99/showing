@@ -65,3 +65,34 @@ describe("POST /api/upload", () => {
     expect((await chamar({ imovelId: "mock-1" })).status).toBe(400);
   });
 });
+
+describe("POST /api/upload (foto do perfil)", () => {
+  beforeEach(async () => {
+    vi.stubEnv("USAR_MOCKS", "1");
+    (await import("@/mocks/corretor")).reiniciarPerfis();
+  });
+
+  afterEach(async () => {
+    const { perfis } = await import("@/mocks/corretor");
+    const { apagarFoto } = await import("@/lib/fotos");
+    for (const p of perfis().values()) if (p.fotoFileId) await apagarFoto(p.fotoFileId);
+    vi.unstubAllEnvs();
+  });
+
+  it("guarda a foto no perfil do corretor e apaga a anterior", async () => {
+    const primeira = await chamar({ alvo: "perfil", arquivo: foto() });
+    expect(primeira.status).toBe(200);
+    const { perfis } = await import("@/mocks/corretor");
+    const antes = perfis().get("mock-corretor")?.fotoFileId;
+    expect(antes).toMatch(/^mock-upload:/);
+
+    const segunda = await chamar({ alvo: "perfil", arquivo: foto() });
+    expect(segunda.status).toBe(200);
+    expect(perfis().get("mock-corretor")?.fotoFileId).not.toBe(antes);
+  });
+
+  it("valida a foto do perfil como a do imóvel", async () => {
+    expect((await chamar({ alvo: "perfil", arquivo: foto(new TextEncoder().encode("texto")) })).status).toBe(400);
+    expect((await chamar({ alvo: "perfil" })).status).toBe(400);
+  });
+});

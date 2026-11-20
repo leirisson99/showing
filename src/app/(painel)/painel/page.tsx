@@ -6,6 +6,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { formatarDataHora } from "@/lib/format";
 import { listarConversas, listarProximasVisitas } from "@/lib/painel/atendimentos";
 import { listarImoveis } from "@/lib/painel/imoveis";
+import { buscarPerfil, perfilCompleto } from "@/lib/painel/perfil";
 import { exigirCorretor } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +18,7 @@ export const metadata: Metadata = {
 export default async function PainelPage() {
   const corretor = await exigirCorretor();
   const imoveis = await listarImoveis(corretor.id);
+  const perfilOk = perfilCompleto(await buscarPerfil(corretor.id));
   const proximas = await listarProximasVisitas(corretor.id);
   const transferidas = (await listarConversas(corretor.id)).filter((c) => c.transferida);
   const contagem = (s: string) => imoveis.filter((i) => i.status === s).length;
@@ -24,6 +26,14 @@ export default async function PainelPage() {
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-4 py-8">
       <h1 className="text-[26px] font-bold lg:text-[32px]">Olá, {corretor.name ?? corretor.email}</h1>
+      {!perfilOk && (
+        <p role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-[#FFF4E0] p-4 text-[#7A4A00]">
+          <span>Complete seu perfil (nome e CRECI) para poder publicar imóveis.</span>
+          <Link href="/painel/perfil" className={cn(buttonVariants(), "h-11 rounded-full px-5")}>
+            Completar perfil
+          </Link>
+        </p>
+      )}
       {imoveis.length === 0 ? (
         <div className="flex flex-col items-start gap-4 rounded-xl border border-dashed p-6">
           <p className="text-muted-foreground">Cadastre seu primeiro imóvel para ter sua página e seu atendente.</p>

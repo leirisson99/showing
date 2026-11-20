@@ -9,7 +9,7 @@ import type { ContextoMock } from "./mock-atendente";
 // "Conversar"/"Agendar visita". Assim não pesa no carregamento nem no SEO.
 const ChatBubble = dynamic(() => import("./ChatBubble"), { ssr: false });
 
-type Props = { imovelId: string; corretor: string; imovel: ContextoMock["imovel"] };
+type Props = { imovelId: string; corretor: string; imovel: ContextoMock["imovel"]; whatsapp?: string | null };
 
 export function ChatBubbleLazy(props: Props) {
   const [carregar, setCarregar] = useState(false);

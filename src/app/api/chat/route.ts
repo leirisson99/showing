@@ -3,6 +3,7 @@ import type { MessageData } from "@strands-agents/sdk";
 import { z } from "zod";
 import { criarAtendente } from "@/lib/ai/atendente";
 import type { Resultado } from "@/lib/ai/atendimento";
+import { LIMITE_MENSAGENS_COMPRADOR, LIMITE_POR_MINUTO } from "@/lib/ai/limites";
 import { iaConfigurada } from "@/lib/ai/modelo";
 import { obterRepositorio } from "@/lib/ai/repositorio-atual";
 import { buscarImovelPublicoPorId } from "@/lib/imoveis";
@@ -14,8 +15,6 @@ import { dentroDoLimite } from "@/lib/rate-limit";
 //   {"tipo":"fim","sugestoes"?,"pedeConsentimento"?,"encerrada"?} · {"tipo":"erro","texto"}
 // Logs: só o id da conversa e o tipo do erro, nunca o texto nem dados do comprador (LGPD).
 
-const LIMITE_MENSAGENS_COMPRADOR = 30; // RN-16
-const LIMITE_POR_MINUTO = 20; // RNF-10
 const UM_MINUTO = 60_000;
 
 const corpo = z.object({

@@ -1,6 +1,6 @@
 import { textoSaudacao } from "@/lib/ai/saudacao";
 import type { Lead } from "@/lib/ai/repositorio";
-import { CORRETOR_MOCK } from "@/lib/mocks";
+import { perfis } from "@/mocks/corretor";
 import { estadoAtendimentoMock, type ConversaMock, type StatusVisitaMock } from "@/mocks/atendimento";
 import { store } from "@/mocks/painel";
 import type { Resultado } from "./imoveis";
@@ -131,7 +131,7 @@ export async function buscarConversaDoCorretor(
 
   // A saudação é mostrada pela página e não fica no histórico do agente; entra aqui para
   // a leitura refletir o que o comprador viu.
-  const mensagens: MensagemLida[] = [{ de: "atendente", texto: textoSaudacao(CORRETOR_MOCK.name ?? "o corretor") }];
+  const mensagens: MensagemLida[] = [{ de: "atendente", texto: textoSaudacao(perfis().get(corretorId)?.nome ?? "o corretor") }];
   for (const m of historicos.get(conversaId) ?? []) {
     const texto = textoDaMensagem(m.content);
     if (texto) mensagens.push({ de: m.role === "user" ? "comprador" : "atendente", texto });

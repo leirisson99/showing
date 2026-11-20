@@ -1,5 +1,5 @@
 import { urlDaFoto } from "@/lib/fotos";
-import { CORRETOR_MOCK } from "@/lib/mocks";
+import { perfis } from "@/mocks/corretor";
 import type { ImovelPainel } from "@/lib/painel/tipos";
 import { store } from "@/mocks/painel";
 
@@ -56,6 +56,17 @@ export type ImovelPublico = {
 // Regras a manter: só `publicado` e `vendido` (RN-01, RN-04); rascunho = null.
 // Em produção `urlDaFoto` usa o Appwrite; inclua o host em `images.remotePatterns`.
 
+// Só nome, CRECI, WhatsApp e foto do corretor vão para a página (nunca e-mail nem id).
+function corretorPublico(corretorId: string): CorretorPublico {
+  const p = perfis().get(corretorId);
+  return {
+    nome: p?.nome?.trim() || "Corretor",
+    creci: p?.creci?.trim() || "",
+    whatsapp: p?.whatsapp ?? null,
+    fotoSrc: p?.fotoFileId ? urlDaFoto(p.fotoFileId) : null,
+  };
+}
+
 // Lista explícita do que vai para a página: nada de id do corretor ou dados internos.
 function paraPublico(i: ImovelPainel): ImovelPublico {
   return {
@@ -93,7 +104,7 @@ function paraPublico(i: ImovelPainel): ImovelPublico {
         alt: f.legenda ? `${f.legenda} — ${i.titulo}` : `Foto ${n + 1} do ${i.titulo}`,
         legenda: f.legenda,
       })),
-    corretor: { nome: CORRETOR_MOCK.name ?? "Corretor", creci: "CRECI-SC 00000", whatsapp: "5547999990000", fotoSrc: null },
+    corretor: corretorPublico(i.corretorId),
   };
 }
 

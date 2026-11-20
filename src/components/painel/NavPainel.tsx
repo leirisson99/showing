@@ -10,6 +10,7 @@ const LINKS = [
   { href: "/painel/visitas", rotulo: "Visitas", exato: false },
   { href: "/painel/conversas", rotulo: "Conversas", exato: false },
   { href: "/painel/clientes", rotulo: "Clientes", exato: false },
+  { href: "/painel/perfil", rotulo: "Perfil", exato: false },
 ];
 
 export function NavPainel() {

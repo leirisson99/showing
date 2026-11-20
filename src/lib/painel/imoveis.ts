@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { apagarFoto } from "@/lib/fotos";
 import { store } from "@/mocks/painel";
+import { perfis } from "@/mocks/corretor";
+import { perfilCompleto } from "./perfil";
 import { gerarSlug, faltaParaPublicar } from "./regras";
 import type { DadosImovel } from "./schema";
 import type { ImovelPainel } from "./tipos";
@@ -60,6 +62,9 @@ export async function atualizarImovel(corretorId: string, id: string, dados: Dad
 export async function publicarImovel(corretorId: string, id: string): Promise<Resultado<{ imovel: ImovelPainel }>> {
   const imovel = achar(corretorId, id);
   if (!imovel) return naoEncontrado;
+  if (!perfilCompleto(perfis().get(corretorId) ?? null)) {
+    return { ok: false, erro: "Complete seu perfil (nome e CRECI) antes de publicar: eles aparecem na página do imóvel." };
+  }
   const falta = faltaParaPublicar(imovel);
   if (falta.length > 0) return { ok: false, erro: `Para publicar, falta: ${falta.join(", ")}.` };
   imovel.status = "publicado";

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { calcularHorariosLivres } from "@/lib/ai/horarios";
 import { cn } from "@/lib/utils";
 import { EVENTO_ABRIR_CHAT, EVENTO_CHAT_PRONTO, type ModoChat } from "./eventos";
+import { conversaEncerrada } from "./limite";
 import { conversarComApi, ErroApi } from "./transporte";
 import {
   ESTADO_INICIAL,
@@ -24,9 +25,11 @@ type Props = {
   imovelId: string;
   corretor: string;
   imovel: ContextoMock["imovel"];
+  /** Só dígitos, com DDI. Mostrado quando a conversa chega ao limite de mensagens. */
+  whatsapp?: string | null;
 };
 
-type Salvo = { mensagens: Mensagem[]; estado: Estado; conversaId?: string | null };
+type Salvo = { mensagens: Mensagem[]; estado: Estado; conversaId?: string | null; encerrada?: boolean };
 
 const chave = (imovelId: string) => `showing:conversa:${imovelId}`;
 
@@ -55,25 +58,35 @@ const novoId = () => `m-${Date.now().toString(36)}-${Math.random().toString(36).
 // Horários do corretor usados só pelo mock; o atendente real recebe de listar_horarios.
 const HORARIOS_MOCK = { sab: ["09:00", "10:00", "11:00"], dom: ["10:00"] };
 
-export default function ChatBubble({ imovelId, corretor, imovel }: Props) {
+export default function ChatBubble({ imovelId, corretor, imovel, whatsapp }: Props) {
   const [inicial] = useState(() => ler(imovelId));
   const [aberto, setAberto] = useState(false);
   const [mensagens, setMensagens] = useState<Mensagem[]>(inicial?.mensagens ?? []);
   const [estado, setEstado] = useState<Estado>(inicial?.estado ?? ESTADO_INICIAL);
   const [digitando, setDigitando] = useState(false);
   const [texto, setTexto] = useState("");
+  const [encerradaNoServidor, setEncerradaNoServidor] = useState(inicial?.encerrada ?? false);
+
+  const ultima = mensagens[mensagens.length - 1];
+  const encerrada = conversaEncerrada({
+    encerradaNoServidor,
+    mensagensDoComprador: mensagens.filter((m) => m.papel === "usuario").length,
+    digitando,
+    ultimoPapel: ultima?.papel,
+  });
 
   const botao = useRef<HTMLButtonElement>(null);
   const campo = useRef<HTMLInputElement>(null);
+  const avisoFim = useRef<HTMLDivElement>(null);
   const fim = useRef<HTMLDivElement>(null);
-  const atual = useRef({ mensagens, estado, digitando });
+  const atual = useRef({ mensagens, estado, digitando, encerrada: false });
   const vivo = useRef(true);
   // Id da conversa no servidor (localStorage) e modo simulado quando a IA não está configurada.
   const conversaId = useRef<string | null>(inicial?.conversaId ?? null);
   const simulado = useRef(false);
 
   useEffect(() => {
-    atual.current = { mensagens, estado, digitando };
+    atual.current = { mensagens, estado, digitando, encerrada };
   });
 
   const contexto = useCallback(
@@ -120,6 +133,7 @@ export default function ChatBubble({ imovelId, corretor, imovel }: Props) {
           if (ev.tipo === "inicio") conversaId.current = ev.conversaId;
           else if (ev.tipo === "texto") escrever(ev.texto);
           else if (ev.tipo === "erro") escrever(id === null ? ev.texto : `\n${ev.texto}`);
+          else if (ev.tipo === "fim" && ev.encerrada) setEncerradaNoServidor(true);
           else if (ev.tipo === "fim" && id !== null) {
             const alvo = id;
             setMensagens((ms) => ms.map((m) => (m.id === alvo ? { ...m, sugestoes: ev.sugestoes, pedeConsentimento: ev.pedeConsentimento } : m)));
@@ -163,7 +177,7 @@ export default function ChatBubble({ imovelId, corretor, imovel }: Props) {
   const enviar = useCallback(
     async (conteudo: string) => {
       const limpo = conteudo.trim().slice(0, 500);
-      if (!limpo || atual.current.digitando) return;
+      if (!limpo || atual.current.digitando || atual.current.encerrada) return;
 
       adicionar({ id: novoId(), papel: "usuario", texto: limpo });
       setTexto("");
@@ -201,15 +215,18 @@ export default function ChatBubble({ imovelId, corretor, imovel }: Props) {
   }, [abrir]);
 
   useEffect(() => {
-    if (!digitando) gravar(imovelId, { mensagens, estado, conversaId: conversaId.current });
-  }, [imovelId, mensagens, estado, digitando]);
+    if (!digitando) gravar(imovelId, { mensagens, estado, conversaId: conversaId.current, encerrada: encerradaNoServidor });
+  }, [imovelId, mensagens, estado, digitando, encerradaNoServidor]);
+
+  useEffect(() => {
+    if (encerrada) avisoFim.current?.focus();
+  }, [encerrada]);
 
   useEffect(() => {
     fim.current?.scrollIntoView({ block: "end" });
   }, [mensagens, digitando, aberto]);
 
-  const ultima = mensagens[mensagens.length - 1];
-  const sugestoes = !digitando && ultima?.papel === "assistente" ? ultima.sugestoes : undefined;
+  const sugestoes = !digitando && !encerrada && ultima?.papel === "assistente" ? ultima.sugestoes : undefined;
 
   return (
     <Dialog.Root open={aberto} onOpenChange={setAberto} modal="trap-focus">
@@ -279,6 +296,24 @@ export default function ChatBubble({ imovelId, corretor, imovel }: Props) {
           </div>
 
           <footer className="flex flex-col gap-2 border-t p-3">
+            {encerrada ? (
+              <div ref={avisoFim} tabIndex={-1} role="status" className="flex flex-col gap-3 rounded-xl bg-muted p-4 text-sm outline-none">
+                <p>
+                  <strong>Esta conversa chegou ao limite de mensagens.</strong> Para continuar, fale direto com {corretor} pelos contatos da
+                  página.
+                </p>
+                {whatsapp && (
+                  <a
+                    href={`https://wa.me/${whatsapp}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex min-h-11 w-fit items-center rounded-full bg-primary px-5 font-semibold text-primary-foreground"
+                  >
+                    Chamar no WhatsApp
+                  </a>
+                )}
+              </div>
+            ) : (
             <form
               className="flex gap-2"
               onSubmit={(e) => {
@@ -300,6 +335,7 @@ export default function ChatBubble({ imovelId, corretor, imovel }: Props) {
                 <Send />
               </Button>
             </form>
+            )}
             <p className="text-center text-xs text-muted-foreground">
               Ao conversar, você concorda com a{" "}
               <Link href="/privacidade" target="_blank" className="underline underline-offset-2">

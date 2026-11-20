@@ -287,6 +287,7 @@ export function PaginaImovel({ imovel, aviso }: Props) {
         <ChatBubbleLazy
           imovelId={imovel.id}
           corretor={imovel.corretor.nome}
+          whatsapp={imovel.corretor.whatsapp}
           imovel={{
             preco: imovel.preco,
             condominio: imovel.condominio,
