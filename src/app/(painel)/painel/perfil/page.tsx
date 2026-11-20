@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { FormPerfil } from "@/components/painel/FormPerfil";
 import { urlDaFoto } from "@/lib/fotos";
+import { formatarTelefone } from "@/lib/format";
 import { buscarPerfil } from "@/lib/painel/perfil";
 import { exigirCorretor } from "@/lib/session";
 
@@ -22,7 +23,7 @@ export default async function PerfilPage() {
         valores={{
           nome: perfil?.nome ?? "",
           creci: perfil?.creci ?? "",
-          whatsapp: perfil?.whatsapp ?? "",
+          whatsapp: perfil?.whatsapp ? formatarTelefone(perfil.whatsapp) : "",
           horariosVisita: perfil?.horariosVisita ?? {},
           duracaoVisitaMin: perfil?.duracaoVisitaMin ?? 60,
         }}

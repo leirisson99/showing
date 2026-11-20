@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Mail, MessageSquare, Phone, Search, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FiltroAbas } from "./FiltroAbas";
 import type { StatusVisita } from "@/lib/painel/atendimentos";
 import { BadgeVisita } from "./BadgeVisita";
 
@@ -61,15 +61,7 @@ export function ListaClientes({ itens }: { itens: ItemCliente[] }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Tabs value={filtro} onValueChange={(v) => setFiltro(v as Filtro)}>
-          <TabsList className="h-auto flex-wrap">
-            {FILTROS.map((f) => (
-              <TabsTrigger key={f.valor} value={f.valor} className="h-9 px-3">
-                {f.rotulo}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+        <FiltroAbas filtros={FILTROS} valor={filtro} onChange={setFiltro} rotulo="Filtrar clientes" />
         <div className="relative sm:w-72">
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
           <Input

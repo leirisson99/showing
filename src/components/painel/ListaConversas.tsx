@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { CalendarCheck, MessageSquare, TriangleAlert } from "lucide-react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FiltroAbas } from "./FiltroAbas";
 import { BadgeVisita } from "./BadgeVisita";
 import type { StatusVisita } from "@/lib/painel/atendimentos";
 
@@ -51,15 +51,7 @@ export function ListaConversas({ itens }: { itens: ItemConversa[] }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <Tabs value={filtro} onValueChange={(v) => setFiltro(v as Filtro)}>
-        <TabsList className="h-auto flex-wrap">
-          {FILTROS.map((f) => (
-            <TabsTrigger key={f.valor} value={f.valor} className="h-9 px-3">
-              {f.rotulo}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
+      <FiltroAbas filtros={FILTROS} valor={filtro} onChange={setFiltro} rotulo="Filtrar conversas" />
 
       {visiveis.length === 0 ? (
         <p className="py-8 text-center text-muted-foreground">Nenhuma conversa neste filtro.</p>

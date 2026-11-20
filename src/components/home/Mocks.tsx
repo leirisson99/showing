@@ -15,7 +15,7 @@ export function MockPagina() {
         <span className="size-2.5 rounded-full bg-[#DDE3E1]" aria-hidden />
         <span className="size-2.5 rounded-full bg-[#DDE3E1]" aria-hidden />
         <span className="size-2.5 rounded-full bg-[#DDE3E1]" aria-hidden />
-        <span className="ml-2 truncate rounded-md bg-white px-2 py-0.5 text-[11px] text-muted-foreground">
+        <span className="ml-2 min-w-0 flex-1 truncate rounded-md bg-white px-2 py-0.5 text-[11px] text-muted-foreground">
           /imovel/apartamento-2-quartos-victor-konder-blumenau
         </span>
       </div>

@@ -14,7 +14,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FiltroAbas } from "./FiltroAbas";
 import { alterarStatusVisitaAction } from "@/app/(painel)/painel/visitas/actions";
 import type { StatusVisita } from "@/lib/painel/atendimentos";
 import { BadgeVisita } from "./BadgeVisita";
@@ -69,15 +69,7 @@ export function ListaVisitas({ itens }: { itens: ItemVisita[] }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <Tabs value={filtro} onValueChange={(v) => setFiltro(v as Filtro)}>
-        <TabsList className="h-auto flex-wrap">
-          {FILTROS.map((f) => (
-            <TabsTrigger key={f.valor} value={f.valor} className="h-9 px-3">
-              {f.rotulo}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
+      <FiltroAbas filtros={FILTROS} valor={filtro} onChange={setFiltro} rotulo="Filtrar visitas" />
 
       {visiveis.length === 0 ? (
         <p className="py-8 text-center text-muted-foreground">Nenhuma visita neste filtro.</p>

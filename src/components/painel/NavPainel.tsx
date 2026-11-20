@@ -16,7 +16,7 @@ const LINKS = [
 export function NavPainel() {
   const caminho = usePathname();
   return (
-    <nav aria-label="Painel" className="flex gap-1">
+    <nav aria-label="Painel" className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 md:pb-0">
       {LINKS.map(({ href, rotulo, exato }) => {
         const ativo = exato ? caminho === href : caminho.startsWith(href);
         return (
@@ -25,7 +25,7 @@ export function NavPainel() {
             href={href}
             aria-current={ativo ? "page" : undefined}
             className={cn(
-              "inline-flex h-11 items-center rounded-full px-4 text-sm font-medium hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
+              "inline-flex h-11 shrink-0 items-center rounded-full px-4 text-sm font-medium hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
               ativo && "bg-primary text-primary-foreground hover:bg-primary",
             )}
           >

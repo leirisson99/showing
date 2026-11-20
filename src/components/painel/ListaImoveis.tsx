@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { ImageOff, MapPin, Plus } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FiltroAbas } from "./FiltroAbas";
 import { formatarPreco } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { StatusImovel } from "@/lib/painel/tipos";
@@ -53,15 +53,7 @@ export function ListaImoveis({ itens }: { itens: ItemLista[] }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <Tabs value={filtro} onValueChange={(v) => setFiltro(v as Filtro)}>
-        <TabsList className="h-auto flex-wrap">
-          {FILTROS.map((f) => (
-            <TabsTrigger key={f.valor} value={f.valor} className="h-9 px-3">
-              {f.rotulo}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
+      <FiltroAbas filtros={FILTROS} valor={filtro} onChange={setFiltro} rotulo="Filtrar imóveis por situação" />
 
       {visiveis.length === 0 ? (
         <p className="py-8 text-center text-muted-foreground">Nenhum imóvel neste filtro.</p>

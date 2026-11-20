@@ -55,12 +55,12 @@ function Cena({ fase, selo, titulo, texto, children }: { fase: string; selo: str
   return (
     <div data-beat={fase} className="beat">
       <div className="mx-auto grid w-full max-w-6xl items-center gap-6 lg:grid-cols-2 lg:gap-16">
-        <div className="flex flex-col items-start gap-4">
+        <div className="flex min-w-0 flex-col items-start gap-4">
           <Selo>{selo}</Selo>
           <h2 className="text-[28px] leading-[1.05] font-medium text-balance sm:text-4xl lg:text-5xl">{titulo}</h2>
           <p className="max-w-md text-base text-white/75 lg:text-lg">{texto}</p>
         </div>
-        <div className="flex justify-center lg:justify-end">{children}</div>
+        <div className="flex min-w-0 justify-center lg:justify-end">{children}</div>
       </div>
     </div>
   );

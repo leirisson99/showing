@@ -30,9 +30,10 @@ export function Hero() {
           { href: "#atendente-ia", rotulo: "O atendente" },
           { href: "#duvidas", rotulo: "Dúvidas" },
         ]}
+        login={false}
         acao={
           <Link href="/login" className={botaoCta}>
-            Entrar como corretor
+            Entrar<span className="hidden sm:inline"> como corretor</span>
           </Link>
         }
       />
@@ -40,8 +41,8 @@ export function Hero() {
       <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center gap-5 px-5 pt-32 pb-40">
         <p className="text-sm font-semibold tracking-wide text-[#C9A66B] uppercase">Página exclusiva + atendente virtual</p>
         <AnimatedHeading
-          text={"Seu imóvel ganha página própria\ne um atendente que marca a visita."}
-          className="max-w-3xl text-4xl leading-[1.05] font-medium md:text-5xl lg:text-6xl"
+          text="Seu imóvel ganha página própria e um atendente que marca a visita."
+          className="max-w-3xl text-4xl leading-[1.05] font-medium text-balance md:text-5xl lg:text-6xl"
           style={{ letterSpacing: "-0.03em" }}
         />
         <FadeIn delay={800} duration={1000}>
