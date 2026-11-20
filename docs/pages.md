@@ -70,6 +70,8 @@ Toda tela com dados tem os quatro estados desenhados e implementados:
 
 ## 2. Design system
 
+A marca (logotipo, tom de voz, movimento) está em [identidade-visual.md](identidade-visual.md).
+
 ### 2.1 Princípios
 
 1. **O imóvel é o protagonista.** Fotos grandes, informação clara, interface discreta.
@@ -79,24 +81,25 @@ Toda tela com dados tem os quatro estados desenhados e implementados:
 
 ### 2.2 Cores
 
-Tema do shadcn configurado em `globals.css` com estas cores (converta para o formato de cor que o tema usar). Só modo claro na POC.
+Atualizado em 2026-11-20 a partir dos modelos da pasta `layouts/`. Tokens em `src/app/globals.css`; justificativa e uso em [identidade-visual.md](identidade-visual.md). Só modo claro na POC.
 
-| Token shadcn | Uso | Cor |
+| Token | Uso | Cor |
 | --- | --- | --- |
-| `--background` | Fundo da página | `#FFFFFF` |
-| `--foreground` | Texto principal | `#14211F` |
-| `--muted` | Fundos secundários, seções alternadas | `#F3F5F4` |
-| `--muted-foreground` | Texto secundário | `#5B6B68` |
-| `--primary` | Botões principais, links, cabeçalho da bolha | `#0F3D3E` (verde-petróleo) |
-| `--primary-foreground` | Texto sobre primary | `#FFFFFF` |
-| `--accent` | Destaques: preço, selo, chamada "Agendar visita" | `#F2A65A` (âmbar) |
-| `--accent-foreground` | Texto sobre accent | `#3A2205` |
-| `--border` / `--input` | Bordas e campos | `#DDE3E1` |
-| `--ring` | Foco | `#0F3D3E` |
+| `--background` | Fundo das páginas (creme) | `#F4F1EA` |
+| `--foreground` | Texto principal | `#1B2A22` |
+| `--card` / `--popover` | Cartões e menus | `#FBFAF6` |
+| `--primary` | Verde-floresta: botões escuros, marca, cabeçalho da bolha | `#1F3A2B` |
+| `--cta` | Bronze: a ação principal da tela (Agendar visita, Entrar) | `#7A5A3A` |
+| `--muted` / `--secondary` | Faixas e cartões secundários | `#ECE7DB` |
+| `--muted-foreground` | Texto secundário | `#5C675F` |
+| `--accent` | Fundo de hover | `#E6DFCE` |
+| `--border` / `--input` | Bordas e campos | `#DDD6C6` |
 | `--destructive` | Excluir, erros | `#B42318` |
-| `--card` | Cartões | `#FFFFFF` |
+| `--brand-deep` | Faixas escuras (hero, chamada final, atendente) | `#1B2F24` |
+| `--brand-moss` / `--brand-glow` | Tons do fundo escuro | `#2D4A38` / `#5C7F66` |
+| `--brand-sand` | Rodapé | `#D9D5C6` |
 
-Cores de status (badges):
+Cores de status (badges), sem mudança:
 
 | Status | Fundo | Texto |
 | --- | --- | --- |
@@ -105,24 +108,23 @@ Cores de status (badges):
 | Vendido / Realizada | `#E8EEF6` | `#1F3A5F` |
 | Cancelada | `#FDECEA` | `#8A1C12` |
 
-Regra: o âmbar (`accent`) aparece no máximo uma ou duas vezes por tela, para marcar a ação mais importante.
+Regra: o bronze (`--cta`) marca a ação mais importante da tela; no máximo uma ou duas vezes por seção.
 
 ### 2.3 Tipografia
 
 Fontes via `next/font/google`:
 
-- **Títulos:** Space Grotesk (500 e 700)
-- **Texto e interface:** Inter (400, 500, 600)
+- **Títulos e texto:** Manrope (300 a 700)
+- **Nome da marca:** Cormorant Garamond (500 a 700), só no logotipo
 
 | Estilo | Mobile | Desktop | Uso |
 | --- | --- | --- | --- |
-| Display | 32 px / 700 | 44 px / 700 | Título do imóvel |
-| H1 | 26 px / 700 | 32 px / 700 | Título de página do painel |
-| H2 | 20 px / 600 | 24 px / 600 | Seções |
-| H3 | 17 px / 600 | 18 px / 600 | Subseções, títulos de cartão |
+| Hero | 36 px / 500 | 60 px / 500 | Título do imóvel e da página inicial |
+| H2 de seção | 30 px / 500 | 36 px / 500 | Seções das páginas públicas |
+| H1 do painel | 26 px / 700 | 32 px / 700 | Título de página do painel |
 | Corpo | 16 px / 400 | 16 px / 400 | Texto, altura de linha 1,6 |
 | Pequeno | 14 px / 400 | 14 px / 400 | Legendas, metadados |
-| Preço | 28 px / 700 | 32 px / 700 | Preço na página do imóvel (Space Grotesk) |
+| Preço | 28 px / 700 | 32 px / 700 | Preço na página do imóvel |
 
 Corpo nunca abaixo de 16 px no celular (evita zoom automático em campos no iOS).
 

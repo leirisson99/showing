@@ -5,8 +5,14 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-inter);
-  --font-heading: var(--font-space-grotesk);
+  --font-sans: var(--font-manrope);
+  --font-heading: var(--font-manrope);
+  --font-serif: var(--font-cormorant);
+  --color-cta: var(--cta);
+  --color-cta-foreground: var(--cta-foreground);
+  --color-moss: var(--brand-moss);
+  --color-deep: var(--brand-deep);
+  --color-sand: var(--brand-sand);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -46,38 +52,45 @@
 }
 
 :root {
-  --background: #ffffff;
-  --foreground: #14211f;
-  --card: #ffffff;
-  --card-foreground: #14211f;
-  --popover: #ffffff;
-  --popover-foreground: #14211f;
-  --primary: #0f3d3e;
+  /* Creme, verde-floresta e bronze (docs/identidade-visual.md) */
+  --background: #f4f1ea;
+  --foreground: #1b2a22;
+  --card: #fbfaf6;
+  --card-foreground: #1b2a22;
+  --popover: #fbfaf6;
+  --popover-foreground: #1b2a22;
+  --primary: #1f3a2b;
   --primary-foreground: #ffffff;
-  --secondary: #f3f5f4;
-  --secondary-foreground: #14211f;
-  --muted: #f3f5f4;
-  --muted-foreground: #5b6b68;
-  --accent: #f2a65a;
-  --accent-foreground: #3a2205;
+  --secondary: #ece7db;
+  --secondary-foreground: #1b2a22;
+  --muted: #ece7db;
+  --muted-foreground: #5c675f;
+  --accent: #e6dfce;
+  --accent-foreground: #1b2a22;
+  --cta: #7a5a3a;
+  --cta-foreground: #ffffff;
   --destructive: #b42318;
-  --border: #dde3e1;
-  --input: #dde3e1;
-  --ring: #0f3d3e;
-  --chart-1: #0f3d3e;
-  --chart-2: #f2a65a;
-  --chart-3: #5b6b68;
+  --border: #ddd6c6;
+  --input: #ddd6c6;
+  --ring: #1f3a2b;
+  --chart-1: #1f3a2b;
+  --chart-2: #7a5a3a;
+  --chart-3: #5c675f;
   --chart-4: #0b5a3b;
   --chart-5: #1f3a5f;
-  --radius: 0.75rem;
-  --sidebar: #f3f5f4;
-  --sidebar-foreground: #14211f;
-  --sidebar-primary: #0f3d3e;
+  --radius: 1rem;
+  --sidebar: #ece7db;
+  --sidebar-foreground: #1b2a22;
+  --sidebar-primary: #1f3a2b;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #ffffff;
-  --sidebar-accent-foreground: #14211f;
-  --sidebar-border: #dde3e1;
-  --sidebar-ring: #0f3d3e;
+  --sidebar-accent: #fbfaf6;
+  --sidebar-accent-foreground: #1b2a22;
+  --sidebar-border: #ddd6c6;
+  --sidebar-ring: #1f3a2b;
+  --brand-deep: #1b2f24;
+  --brand-moss: #2d4a38;
+  --brand-glow: #5c7f66;
+  --brand-sand: #d9d5c6;
 }
 
 @layer base {
@@ -93,6 +106,116 @@
   h1,
   h2,
   h3 {
-    @apply font-heading;
+    @apply font-heading tracking-tight;
   }
+}
+/* ==========================================================================
+   História "Como funciona" (docs/identidade-visual.md)
+   Sem JavaScript ou com "reduzir movimento" é uma sequência normal de seções.
+   Com [data-ativo] (posto por HistoriaScroll) vira uma cena fixa, e o movimento
+   é calculado aqui a partir de --sp (progresso de 0 a 1).
+   ========================================================================== */
+.historia {
+  --sp: 0;
+  background: var(--brand-deep);
+  color: #fff;
+}
+
+.historia-palco {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.historia-fundo {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(60% 50% at 50% 30%, color-mix(in oklab, var(--brand-glow) 45%, transparent), transparent 70%),
+    radial-gradient(45% 40% at 85% 85%, color-mix(in oklab, var(--cta) 30%, transparent), transparent 70%),
+    linear-gradient(180deg, var(--brand-moss) -40%, var(--brand-deep) 70%);
+}
+
+.historia .beat {
+  padding: 3rem 1rem;
+}
+
+.historia-progresso {
+  display: none;
+}
+
+/* ---- Modo cena fixa ---- */
+.historia[data-ativo] {
+  height: 400vh;
+}
+
+.historia[data-ativo] .historia-palco {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+}
+
+.historia[data-ativo] .beat {
+  --entra: clamp(0, calc((var(--sp) - var(--a)) / (var(--b) - var(--a))), 1);
+  --sai: clamp(0, calc((var(--sp) - var(--c)) / (var(--d) - var(--c))), 1);
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  pointer-events: none;
+  opacity: calc(var(--entra) * (1 - var(--sai)));
+  transform: translate3d(0, calc((1 - var(--entra)) * 36px - var(--sai) * 36px), 0);
+  will-change: transform, opacity;
+}
+
+.historia[data-ativo] .beat > * {
+  pointer-events: auto;
+}
+
+/* Janelas de cada cena; uma sai por completo antes da próxima entrar. */
+.historia[data-ativo] [data-beat="pagina"] { --a: -1; --b: 0; --c: 0.27; --d: 0.33; }
+.historia[data-ativo] [data-beat="atendente"] { --a: 0.37; --b: 0.43; --c: 0.62; --d: 0.68; }
+.historia[data-ativo] [data-beat="visita"] { --a: 0.73; --b: 0.79; --c: 2; --d: 3; }
+
+/* Cena fora de vista não recebe foco nem é lida como visível. */
+.historia[data-ativo]:not([data-fase="pagina"]) [data-beat="pagina"],
+.historia[data-ativo]:not([data-fase="atendente"]) [data-beat="atendente"],
+.historia[data-ativo]:not([data-fase="visita"]) [data-beat="visita"] {
+  visibility: hidden;
+}
+
+/* Falas do chat e linhas do resumo entram uma a uma, presas à rolagem. */
+.historia[data-ativo] [data-beat="atendente"] .msg {
+  --m: clamp(0, calc((var(--sp) - 0.44 - var(--i) * 0.04) / 0.03), 1);
+  opacity: var(--m);
+  transform: translate3d(0, calc((1 - var(--m)) * 12px), 0);
+}
+.historia[data-ativo] [data-beat="visita"] .msg {
+  --m: clamp(0, calc((var(--sp) - 0.8 - var(--i) * 0.025) / 0.02), 1);
+  opacity: var(--m);
+  transform: translate3d(0, calc((1 - var(--m)) * 8px), 0);
+}
+
+.historia[data-ativo] .historia-progresso {
+  display: block;
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  width: 120px;
+  height: 2px;
+  translate: -50% 0;
+  border-radius: 2px;
+  background: rgb(255 255 255 / 0.2);
+}
+.historia[data-ativo] .historia-progresso::after {
+  content: "";
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--cta);
+  transform: scaleX(var(--sp));
+  transform-origin: left;
 }
