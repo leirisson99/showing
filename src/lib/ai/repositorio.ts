@@ -39,3 +39,19 @@ export interface RepositorioAtendimento {
   mensagensDaConversa(conversaId: string): Promise<MessageData[]>;
   salvarMensagens(conversaId: string, mensagens: MessageData[]): Promise<void>;
 }
+
+/** `criarVisita` recusada pelo banco: o horário já foi pedido por outro comprador, ou a conversa já tem visita. */
+export class ConflitoDeVisita extends Error {
+  constructor(readonly motivo: "horario" | "conversa") {
+    super(`conflito de visita: ${motivo}`);
+    this.name = "ConflitoDeVisita";
+  }
+}
+
+/** `salvarMensagens` recusada: outra requisição gravou o histórico depois da leitura (RNF, C3). */
+export class ConflitoDeHistorico extends Error {
+  constructor() {
+    super("o histórico da conversa mudou durante a resposta");
+    this.name = "ConflitoDeHistorico";
+  }
+}

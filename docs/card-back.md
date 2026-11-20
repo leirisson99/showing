@@ -18,8 +18,8 @@ Tudo o que falta para tirar o Showing dos dados de exemplo (`USAR_MOCKS=1`) e co
 | BK-01 Ambiente e banco | P | PARCIAL | BK-00 |
 | BK-02 Login real (A1) | P | A FAZER | BK-01, BK-07 |
 | BK-03 Imóveis, fotos e perfil no Prisma | G | PRONTO | BK-01 |
-| BK-04 Atendimento, conversas e visitas no Prisma | G | A FAZER | BK-01, BK-03 |
-| BK-05 Métricas no Prisma | P | A FAZER | BK-03, BK-04 |
+| BK-04 Atendimento, conversas e visitas no Prisma | G | PRONTO | BK-01, BK-03 |
+| BK-05 Métricas no Prisma | P | PRONTO | BK-03, BK-04 |
 | BK-06 Fotos no Appwrite | M | PARCIAL | BK-03 |
 | BK-07 E-mails de visita e transferência (C5) | M | A FAZER | BK-04 |
 | BK-08 Privacidade e LGPD no backend | M | A FAZER | BK-04 |
@@ -71,20 +71,21 @@ Sem `USAR_MOCKS=1` o painel e a página pública leem e gravam no Postgres; com 
 - **Testes sem exemplos:** `semearExemplos()` (em `src/lib/mocks.ts`) deixa as conversas e eventos de exemplo só para o desenvolvimento; `vitest.config.ts` define `USAR_MOCKS=1` para os testes de regra.
 - **Ainda em memória, mesmo sem `USAR_MOCKS`:** conversas, visitas, clientes e métricas do painel (`atendimentos.ts`, `metricas.ts`, `/api/chat`, `/api/eventos`): BK-04 e BK-05. Até lá o painel sem mocks mostra esses blocos vazios ou de exemplo. O upload de fotos precisa do Appwrite (BK-06) e o painel exige login real (BK-02).
 
-## BK-04 · Atendimento, conversas e visitas no Prisma — G
+## BK-04 · Atendimento, conversas e visitas no Prisma — PRONTO (2026-11-20)
 
-- Implementar `RepositorioAtendimento` (`src/lib/ai/repositorio.ts`) com Prisma e trocar em `src/lib/ai/repositorio-atual.ts`; substituir `src/mocks/atendimento.ts`.
-- `src/lib/painel/atendimentos.ts`: visitas, conversas, clientes, `marcarConversaLida`, `contarNaoLidas`. Pode exigir campo novo (`lidaEm`) no `Conversa`: migration.
-- **Visita:** proteção contra duas visitas no mesmo horário (índice único ou transação), RN-17 a RN-20; cancelada libera o horário.
-- **Histórico da conversa:** hoje duas mensagens simultâneas na mesma conversa podem sobrescrever o histórico; salvar com controle de concorrência.
-- Nome e contato só são gravados depois do consentimento (RN-11).
-- **Pronto quando:** `pnpm vitest run` com a suíte do atendente passa contra o banco e uma conversa real gera visita visível em `/painel/visitas`.
+Sem `USAR_MOCKS=1`, o atendente e o painel de conversas, visitas e clientes usam o Postgres; com ele (e nos testes) segue tudo em memória.
+- **Atendente:** `src/lib/ai/repositorio-db.ts` implementa `RepositorioAtendimento`; `repositorio-atual.ts` escolhe a fonte (uma instância Prisma por requisição). Horários e duração vêm do `User` dono do imóvel; `visitasOcupadas` olha as visitas `pedida`/`confirmada` de **todos** os imóveis do corretor (RN-17).
+- **Visita:** nasce `pedida` (RN-20). O índice único parcial do BK-00 recusa o mesmo horário do mesmo corretor; a recusa vira `ConflitoDeVisita`, e a ferramenta `agendar_visita` devolve ao modelo "esse horário acabou de ser pedido, ofereça outro" (ou "já existe pedido nesta conversa", RN-19). Cancelada libera o horário.
+- **Histórico:** `salvarMensagens` só grava se a `versao` ainda é a lida; senão `ConflitoDeHistorico` e a rota responde o evento de erro (fim do risco de duas respostas se sobrescreverem).
+- **Consentimento:** `salvarLead` grava o lead com data e hora; o painel só devolve nome e contato com `consentimento = true` (RN-11, RNF-13).
+- **Painel:** `src/lib/painel/atendimentos.ts` virou despachante para `atendimentos-db.ts` (ou `src/mocks/painel-atendimentos.ts`); a lógica de clientes, transições e `contarNaoLidas` ficou compartilhada. Tudo filtra pelo dono do imóvel (RN-23); mudar status usa comparação com o valor lido (sem pular etapa em ações simultâneas); marcar como lida não reordena a lista; nova transferência volta a pedir atenção.
+- **Testes:** `repositorio-db.test.ts` (9 casos contra o Postgres: fluxo completo do atendente, horário duplicado, histórico concorrente, RN-11/RN-23, transições). 
 
-## BK-05 · Métricas no Prisma — P
+## BK-05 · Métricas no Prisma — PRONTO (2026-11-20)
 
-- Gravar e agregar na tabela `Evento` (`src/lib/painel/metricas.ts`, `POST /api/eventos`, eventos de `/api/chat`).
-- Sem dado pessoal no evento; a pré-visualização do corretor não conta.
-- **Pronto quando:** os 4 números da visão geral e as colunas da lista de imóveis vêm do banco.
+`metricas.ts` virou despachante para `metricas-db.ts` (tabela `Evento`, `groupBy` por tipo e por imóvel, só os últimos N dias; "conversas" = com ao menos uma mensagem do comprador). `registrarEvento` só grava para imóvel que não é rascunho. Sem dado pessoal. 1 teste de integração (dono × outro, período, rascunho).
+
+**Verificação:** 129 testes, `typecheck`, `lint`, `build` e 24 testes de navegador (fumaça, painel e bolha no desktop, sobre os mocks) passam. **Ainda não testado:** o fluxo real pelo navegador (bolha com o modelo de IA gravando no banco e aparecendo no painel): precisa do login real (BK-02) para ver o painel.
 
 ## BK-06 · Fotos no Appwrite — PARCIAL (2026-11-20)
 

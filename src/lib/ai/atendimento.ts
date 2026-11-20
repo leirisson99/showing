@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { calcularHorariosLivres } from "./horarios";
-import type { RepositorioAtendimento } from "./repositorio";
+import { ConflitoDeVisita, type RepositorioAtendimento } from "./repositorio";
 
 // Regras das ferramentas do atendente. Cada função valida a entrada com Zod e
 // devolve { ok: true, ... } ou { ok: false, erro } para o modelo responder sem quebrar.
@@ -142,11 +142,17 @@ export function agendarVisita(ctx: ContextoAtendimento, entrada: unknown) {
     }
 
     // RN-20: toda visita nasce `pedida`. O envio dos e-mails (RN-21) entra no card C5.
-    const visita = await ctx.repo.criarVisita({
-      imovelId: ctx.imovelId,
-      conversaId: ctx.conversaId,
-      dataHora: escolhido.instante,
-    });
+    let visita: { id: string };
+    try {
+      visita = await ctx.repo.criarVisita({ imovelId: ctx.imovelId, conversaId: ctx.conversaId, dataHora: escolhido.instante });
+    } catch (e) {
+      if (!(e instanceof ConflitoDeVisita)) throw e;
+      return erro(
+        e.motivo === "conversa"
+          ? "Já existe um pedido de visita nesta conversa. Para outro horário, o comprador fala com o corretor."
+          : "Esse horário acabou de ser pedido por outra pessoa. Chame listar_horarios e ofereça outro.",
+      );
+    }
     return { ok: true, visita_id: visita.id, status: "pedida", horario: escolhido.rotulo };
   });
 }

@@ -1,8 +1,10 @@
+import { usarMocks } from "@/lib/mocks";
 import { repositorioMockGlobal } from "@/mocks/atendimento";
+import { criarRepositorioDb } from "./repositorio-db";
 import type { RepositorioAtendimento } from "./repositorio";
 
-// TODO(backend): devolver a implementação Prisma (Conversa, Visita, User.horariosVisita).
-// É o único ponto que a rota de chat usa para escolher o repositório.
+// Único ponto que a rota de chat usa para escolher o repositório: memória com USAR_MOCKS=1,
+// senão o Prisma (uma instância por requisição).
 export function obterRepositorio(): RepositorioAtendimento {
-  return repositorioMockGlobal();
+  return usarMocks() ? repositorioMockGlobal() : criarRepositorioDb();
 }
