@@ -4,7 +4,7 @@ import { buscarPerfil } from "@/lib/painel/perfil";
 import type { ImovelPainel } from "@/lib/painel/tipos";
 import type { PerfilCorretor } from "@/mocks/corretor";
 
-export type FotoPublica = { src: string; alt: string; legenda: string | null };
+export type FotoPublica = { id: string; src: string; alt: string; legenda: string | null };
 
 export type InfoBairro = {
   escolas: string[];
@@ -111,6 +111,7 @@ function paraPublico(i: ImovelPainel, corretor: CorretorPublico): ImovelPublico 
     fotos: [...i.fotos]
       .sort((a, b) => a.ordem - b.ordem)
       .map((f, n) => ({
+        id: f.id,
         src: urlDaFoto(f.fileId),
         // A legenda vira o texto alternativo (pages.md, 1.5).
         alt: f.legenda ? `${f.legenda} — ${i.titulo}` : `Foto ${n + 1} do ${i.titulo}`,

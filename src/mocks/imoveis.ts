@@ -4,12 +4,13 @@ import { UNSPLASH, urlUnsplash, type FotoUnsplash } from "./unsplash";
 // Dados de exemplo para desenvolver a interface antes de ligar o banco.
 // Nada aqui é de um imóvel ou corretor real.
 
-const foto = (f: FotoUnsplash, prefixo: string) => ({ src: urlUnsplash(f.id), alt: `${f.alt} (${prefixo} de exemplo)`, legenda: f.legenda });
+const foto = (f: FotoUnsplash, prefixo: string, id: string) => ({ id, src: urlUnsplash(f.id), alt: `${f.alt} (${prefixo} de exemplo)`, legenda: f.legenda });
 
-const fotos = (prefixo: string, comFachada: boolean) =>
+// O id é o mesmo que src/mocks/painel.ts dá à foto no store: `${imovel}-foto-${posição}`.
+const fotos = (prefixo: string, comFachada: boolean, imovelId: string) =>
   [comFachada && UNSPLASH.fachada, UNSPLASH.sala, UNSPLASH.cozinha, UNSPLASH.quarto, UNSPLASH.varanda, UNSPLASH.banheiro]
     .filter((f): f is FotoUnsplash => f !== false)
-    .map((f) => foto(f, prefixo));
+    .map((f, i) => foto(f, prefixo, `${imovelId}-foto-${i}`));
 
 const corretor = {
   nome: "Corretor de Exemplo",
@@ -46,7 +47,7 @@ export const imoveisMock: ImovelPublico[] = [
     aceitaFgts: true,
     caracteristicas: ["Sacada com churrasqueira", "Armários embutidos", "Elevador", "Portaria", "Salão de festas"],
     infoAdicional: "Aceita pets de pequeno porte. Chaves disponíveis para visita aos sábados.",
-    fotos: fotos("apartamento", true),
+    fotos: fotos("apartamento", true, "mock-1"),
     infoBairro: {
       escolas: ["Escola de exemplo A", "Colégio de exemplo B"],
       mercados: ["Mercado de exemplo", "Padaria de exemplo"],
@@ -81,7 +82,7 @@ export const imoveisMock: ImovelPublico[] = [
     aceitaFgts: null,
     caracteristicas: ["Quintal", "Churrasqueira"],
     infoAdicional: null,
-    fotos: fotos("casa", false),
+    fotos: fotos("casa", false, "mock-2"),
     infoBairro: null,
     corretor,
   },

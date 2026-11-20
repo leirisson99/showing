@@ -12,7 +12,7 @@ export function limiteDiario(): number {
   return Number.isInteger(n) && n > 0 ? n : 300;
 }
 
-export async function registrarUso(tipo: "chat" | "descricao", uso: UsoDeTokens, imovelId?: string): Promise<void> {
+export async function registrarUso(tipo: "chat" | "descricao" | "pagina", uso: UsoDeTokens, imovelId?: string): Promise<void> {
   if (usarMocks()) return;
   try {
     await db.usoIA.create({

@@ -137,11 +137,12 @@ model Imovel {
   criadoEm            DateTime     @default(now())
   atualizadoEm        DateTime     @updatedAt
 
-  corretor  User       @relation(fields: [corretorId], references: [id])
+  corretor  User            @relation(fields: [corretorId], references: [id])
   fotos     Foto[]
   conversas Conversa[]
   visitas   Visita[]
   eventos   Evento[]
+  roteiros  RoteiroPagina[]
 
   @@index([corretorId])
   @@index([status])
@@ -241,4 +242,23 @@ model InteressePiloto {
   id       String   @id @default(cuid())
   email    String   @unique
   criadoEm DateTime @default(now())
+}
+
+// Roteiro da página do imóvel (Diretor da Página): o JSON que o front-end desenha. Uma linha por versão.
+// Editar o rascunho altera a própria linha; editar uma versão aprovada cria uma nova. A página pública
+// usa a versão aprovada mais recente; sem nenhuma, usa a página padrão.
+model RoteiroPagina {
+  id           String   @id @default(cuid())
+  imovelId     String
+  versao       Int
+  conteudo     Json
+  relatorio    Json
+  aprovado     Boolean  @default(false)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  imovel Imovel @relation(fields: [imovelId], references: [id], onDelete: Cascade)
+
+  @@unique([imovelId, versao])
+  @@index([imovelId, aprovado])
 }

@@ -11,7 +11,7 @@ export function iaConfigurada(): boolean {
   return Boolean(process.env.AI_API_KEY && process.env.AI_MODEL);
 }
 
-export function criarModelo(): Model {
+export function criarModelo(opcoes: { maxTokens?: number } = {}): Model {
   const apiKey = process.env.AI_API_KEY;
   const modelId = process.env.AI_MODEL;
   if (!apiKey || !modelId) throw new Error("AI_API_KEY e AI_MODEL não configuradas.");
@@ -22,7 +22,7 @@ export function criarModelo(): Model {
     apiKey,
     // Respostas curtas e estáveis: o atendente só repete dados da ficha.
     temperature: 0.3,
-    maxTokens: 3000, // folga para modelos que raciocinam antes de responder e chamar ferramenta
+    maxTokens: opcoes.maxTokens ?? 3000, // folga para modelos que raciocinam antes de responder e chamar ferramenta
     // OpenRouter: pouco raciocínio. O atendente segue regras fixas; sem isto alguns modelos gastam
     // todo o limite pensando e a resposta vem vazia (MaxTokensError).
     params: { reasoning: { effort: "low" } },
