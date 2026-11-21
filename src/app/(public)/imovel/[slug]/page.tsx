@@ -37,7 +37,8 @@ export async function generateMetadata({ params }: PageProps<"/imovel/[slug]">):
     description: descricao,
     alternates: { canonical: urlDoImovel(imovel.slug) },
     // RN-04: imóvel vendido não é indexado.
-    robots: imovel.status === "vendido" ? { index: false, follow: false } : undefined,
+    // Só define quando vendido: um `robots: undefined` apagaria o noindex do ambiente de testes (layout).
+    ...(imovel.status === "vendido" ? { robots: { index: false, follow: false } } : {}),
     openGraph: {
       title: titulo,
       description: descricao,

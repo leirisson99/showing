@@ -24,6 +24,9 @@ async function main() {
     },
   });
 
+  // Produção ou homologação: só o corretor, sem o imóvel de exemplo publicado.
+  if (process.env.SEED_SO_CORRETOR === "1") return;
+
   await db.imovel.upsert({
     where: { slug: "apartamento-2-quartos-victor-konder-blumenau" },
     update: {},

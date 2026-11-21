@@ -62,3 +62,18 @@ describe("jsonLdSite", () => {
     expect(g[1]).toMatchObject({ inLanguage: "pt-BR", publisher: { "@id": expect.stringContaining("#organizacao") } });
   });
 });
+
+describe("indexacaoLiberada", () => {
+  it("só libera com NEXT_PUBLIC_PERMITIR_INDEXACAO=1", async () => {
+    const { indexacaoLiberada } = await import("./seo");
+    const antes = process.env.NEXT_PUBLIC_PERMITIR_INDEXACAO;
+    delete process.env.NEXT_PUBLIC_PERMITIR_INDEXACAO;
+    expect(indexacaoLiberada()).toBe(false);
+    process.env.NEXT_PUBLIC_PERMITIR_INDEXACAO = "true";
+    expect(indexacaoLiberada()).toBe(false);
+    process.env.NEXT_PUBLIC_PERMITIR_INDEXACAO = "1";
+    expect(indexacaoLiberada()).toBe(true);
+    if (antes === undefined) delete process.env.NEXT_PUBLIC_PERMITIR_INDEXACAO;
+    else process.env.NEXT_PUBLIC_PERMITIR_INDEXACAO = antes;
+  });
+});

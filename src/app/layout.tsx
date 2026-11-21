@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Manrope } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
-import { urlDoSite } from "@/lib/seo";
+import { indexacaoLiberada, urlDoSite } from "@/lib/seo";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -14,6 +14,8 @@ export const metadata: Metadata = {
   metadataBase: new URL(urlDoSite()),
   title: "Showing",
   description: "Página exclusiva do imóvel com atendente virtual.",
+  // Ambiente de testes: não entra no Google (as páginas herdam isto, menos as que definem o próprio robots).
+  robots: indexacaoLiberada() ? undefined : { index: false, follow: false },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

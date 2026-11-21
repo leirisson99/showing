@@ -2,6 +2,14 @@ export function urlDoSite(): string {
   return (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, "");
 }
 
+/**
+ * Buscadores só entram quando NEXT_PUBLIC_PERMITIR_INDEXACAO=1. Fora isso (ambiente de testes, homologação),
+ * o site pede para não ser indexado. É variável de build (NEXT_PUBLIC_): refaça a imagem para mudar.
+ */
+export function indexacaoLiberada(): boolean {
+  return process.env.NEXT_PUBLIC_PERMITIR_INDEXACAO === "1";
+}
+
 export function urlDoImovel(slug: string): string {
   return `${urlDoSite()}/imovel/${slug}`;
 }
