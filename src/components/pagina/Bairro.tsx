@@ -22,7 +22,7 @@ export function Bairro({ id, indice, titulo, local, endereco, itens, mapa, movim
   const bp = anima ? entrada : 1;
 
   return (
-    <section ref={ref} id={id} data-tom="claro" data-capitulo="Bairro" className="flex items-center py-20 lg:min-h-[820px]">
+    <section ref={ref} id={id} data-tom="claro" data-capitulo="Bairro" className="flex items-center overflow-x-clip py-20 lg:min-h-[820px]">
       <div className="mx-auto grid w-full max-w-6xl items-center gap-10 px-6 lg:grid-cols-[1.3fr_1fr] lg:gap-14">
         <div className="relative h-80 overflow-hidden rounded-[28px] bg-[#e6ebe9] lg:h-[520px]">
           {mapa ?? (

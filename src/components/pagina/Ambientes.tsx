@@ -69,7 +69,7 @@ export function Ambientes({ id, indice, quadros, movimento }: Props) {
               );
             })}
           </div>
-          <ol className="flex flex-col gap-2.5">
+          <ol className="flex flex-col gap-2.5 pr-16 lg:pr-0">
             {quadros.map((q, i) => {
               const local = limitar(ap * n - i);
               const on = i === ativo;
