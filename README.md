@@ -275,3 +275,19 @@ Todas as conversas são revisadas manualmente toda semana.
 - Link para a política de privacidade na bolha e na página.
 - Dados do comprador visíveis apenas para o corretor do imóvel.
 - Exclusão de dados mediante solicitação.
+
+## Docker (produção)
+
+A imagem tem três alvos (`Dockerfile`): `app` (servidor enxuto, 421 MB, usuário sem privilégio, com healthcheck em `/robots.txt`), `migrate` (roda `prisma migrate deploy`) e `builder`.
+
+```bash
+# 1) copie .env.example para .env.prod e preencha (AUTH_SECRET, EMAIL_*, AI_*, APPWRITE_*, POSTGRES_PASSWORD, NEXT_PUBLIC_SITE_URL...)
+# 2) banco + migrações + app, em uma máquina só:
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+```
+
+- `NEXT_PUBLIC_SITE_URL` (e `NEXT_PUBLIC_EMAIL_PRIVACIDADE`, `APPWRITE_ENDPOINT`) entram **no build**: viram canônica, sitemap, Open Graph, e-mails e o host liberado para as fotos. Mudou o domínio, refaça a imagem. Chaves e senhas **não** entram na imagem: vão por variável de ambiente ao rodar.
+- O build não precisa de banco: as páginas de imóvel nascem no primeiro acesso (`/imovel/_reserva` é só um endereço de reserva que dá 404).
+- Só uma instância do app: o limite de mensagens por minuto é em memória (veja BK-09 em `docs/card-back.md`).
+- Cron da retenção (LGPD): `POST /api/cron/retencao` com `Authorization: Bearer $CRON_SECRET` uma vez por dia.
+- Para criar o primeiro corretor em produção rode o seed uma vez (`docker compose ... run --rm migrate pnpm prisma db seed`, com `SEED_CORRETOR_EMAIL`).

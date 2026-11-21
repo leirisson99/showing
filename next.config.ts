@@ -12,6 +12,8 @@ function hostDoAppwrite() {
 const nextConfig: NextConfig = {
   // O e2e (playwright.config.ts) usa outro diretório para não brigar com o `pnpm dev` aberto.
   distDir: process.env.NEXT_DIST_DIR || ".next",
+  // Servidor enxuto para a imagem Docker (.next/standalone).
+  output: "standalone",
   /* config options here */
   cacheComponents: true,
   partialPrefetching: true,
