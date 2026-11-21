@@ -77,7 +77,8 @@ export async function gerarPagina(corretorId: string, imovelId: string, { instru
     roteiro = roteiroPadrao(entrada);
   }
 
-  roteiro = { ...roteiro, alertas: [...new Set([...roteiro.alertas, ...alertasDaFicha(entrada)])] };
+  // Os alertas vêm do código (campos faltando, fotos sem legenda): o modelo às vezes os repete com os nomes internos das fotos.
+  roteiro = { ...roteiro, alertas: alertasDaFicha(entrada) };
   // Última conferência, mesmo para o que veio do código: o que vai para o corretor sempre passou pelo validador.
   const v = validarRoteiro(roteiro, entrada);
   if (!v.ok) {

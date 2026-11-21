@@ -338,3 +338,4 @@ Questões em aberto
 - **Edições do corretor:** texto editado dispensa `fontes` e a checagem de números, mas segue as regras de voz e de endereço. Editar uma versão aprovada cria uma nova versão; a que está no ar só muda quando ele aprova de novo. "Gerar de novo" sobre um rascunho editado pede confirmação.
 - **Troca de template pelo corretor:** nesta fase, por "Gerar de novo" com um pedido (ex.: "use o essencial"); o corretor tira e reordena capítulos direto na aba.
 - **Dúvidas:** os cartões abrem a bolha de chat já com a pergunta (o painel de chat embutido do design ficou para depois).
+- **Teste com a IA real (2026-11-20, modelo atual do `.env`):** apartamento com 6 fotos → `essencial`; casa com 9 fotos → `familia`. Os dois roteiros passaram **na primeira tentativa**, em 28 e 33 s, sem frase sem fonte. Reproduzir: `pnpm vitest run agente.live`. Os alertas mostrados ao corretor vêm sempre do código (o modelo repetia as fotos como "f7 e f8").
