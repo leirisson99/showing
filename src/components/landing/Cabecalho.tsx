@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { LogoMarca } from "@/components/brand/Logo";
-import { useProgressoDaPagina, useRolagem } from "./use-secao";
+import { useProgressoDaPagina, useRolagem } from "@/components/motion/use-secao";
 
 const MENU = [
   ["O problema", "#problema"],

@@ -20,9 +20,10 @@ import { IndicadorEtapas } from "./IndicadorEtapas";
 import { RevisaoImovel } from "./RevisaoImovel";
 import { SecaoCaracteristicas } from "./SecaoCaracteristicas";
 import { SecaoDados } from "./SecaoDados";
+import { SecaoPagina, type VersaoPagina } from "./SecaoPagina";
 import { SecaoTexto } from "./SecaoTexto";
 
-export type Aba = "dados" | "caracteristicas" | "fotos" | "texto" | "revisao" | "desempenho";
+export type Aba = "dados" | "caracteristicas" | "fotos" | "texto" | "revisao" | "pagina" | "desempenho";
 
 const ABAS: { valor: Aba; rotulo: string }[] = [
   { valor: "dados", rotulo: "Dados" },
@@ -30,6 +31,7 @@ const ABAS: { valor: Aba; rotulo: string }[] = [
   { valor: "fotos", rotulo: "Fotos" },
   { valor: "texto", rotulo: "Texto" },
   { valor: "revisao", rotulo: "Revisão" },
+  { valor: "pagina", rotulo: "Página" },
   { valor: "desempenho", rotulo: "Desempenho" },
 ];
 
@@ -56,11 +58,12 @@ type Props = {
   conversas: ConversaResumida[];
   visitas: VisitaResumida[];
   abaInicial: Aba;
+  pagina: { rascunho: VersaoPagina | null; aprovada: VersaoPagina | null; iaLigada: boolean };
 };
 
 // Editor do imóvel em abas (pages.md §3.9). Enquanto é rascunho, as cinco primeiras abas são
 // as etapas do cadastro; depois de publicado aparece também o Desempenho.
-export function EditorImovel({ imovel, valores, fotos, falta, perfilOk, metricas, conversas, visitas, abaInicial }: Props) {
+export function EditorImovel({ imovel, valores, fotos, falta, perfilOk, metricas, conversas, visitas, abaInicial, pagina }: Props) {
   const router = useRouter();
   const [aba, setAba] = useState<Aba>(abaInicial);
   const [salvando, iniciar] = useTransition();
@@ -175,6 +178,11 @@ export function EditorImovel({ imovel, valores, fotos, falta, perfilOk, metricas
         <TabsContent value="revisao" className={painel}>
           <h2 className="text-xl font-medium">Revisão</h2>
           <RevisaoImovel id={imovel.id} valores={form.getValues()} falta={falta} perfilOk={perfilOk} rascunho={rascunho} irParaAba={setAba} />
+        </TabsContent>
+
+        <TabsContent value="pagina" className={painel}>
+          <h2 className="text-xl font-medium">Página em capítulos</h2>
+          <SecaoPagina imovelId={imovel.id} fotosOk={fotos.length >= 3} rascunho={pagina.rascunho} aprovada={pagina.aprovada} iaLigada={pagina.iaLigada} />
         </TabsContent>
 
         {!rascunho && (

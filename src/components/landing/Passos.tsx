@@ -1,6 +1,6 @@
 "use client";
 
-import { limitar, suave, useSecao, useMovimentoReduzido } from "./use-secao";
+import { limitar, suave, useSecao, useMovimentoReduzido } from "@/components/motion/use-secao";
 
 const PASSOS = [
   ["1", "Envie as fotos", "Pelo celular, com os dados do imóvel. Leva poucos minutos."],

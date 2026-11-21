@@ -1,6 +1,6 @@
 "use client";
 
-import { limitar, suave, useSecao, useMovimentoReduzido } from "./use-secao";
+import { limitar, suave, useSecao, useMovimentoReduzido } from "@/components/motion/use-secao";
 
 const FRASES = ["Pergunta às 23h, no meio do jantar.", "A mesma dúvida pela décima vez na semana.", "E o comprador que esfriou enquanto você dirigia."];
 

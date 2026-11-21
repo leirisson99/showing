@@ -1,6 +1,6 @@
 "use client";
 
-import { limitar, suave, useSecao, useMovimentoReduzido } from "./use-secao";
+import { limitar, suave, useSecao, useMovimentoReduzido } from "@/components/motion/use-secao";
 
 const LISTA = [
   ["01", "Responde na hora, de madrugada também.", "O assistente usa só os dados que você cadastrou. Se não souber, ele não inventa: passa para você."],

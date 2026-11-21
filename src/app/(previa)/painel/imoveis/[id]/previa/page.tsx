@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { FaixaPrevia } from "@/components/imovel/FaixaPrevia";
 import { PaginaImovel } from "@/components/imovel/PaginaImovel";
+import { PaginaRoteiro } from "@/components/pagina/PaginaRoteiro";
+import { roteiroDaPrevia } from "@/lib/pagina/servico";
 import { imovelParaPagina } from "@/lib/imoveis";
 import { buscarImovel } from "@/lib/painel/imoveis";
 import { buscarPerfil, perfilCompleto } from "@/lib/painel/perfil";
@@ -18,10 +20,9 @@ export default async function PreviaPage({ params }: PageProps<"/painel/imoveis/
 
   const podePublicar = faltaParaPublicar(imovel).length === 0 && perfilCompleto(await buscarPerfil(corretor.id));
 
-  return (
-    <PaginaImovel
-      imovel={await imovelParaPagina(imovel)}
-      faixa={<FaixaPrevia imovelId={imovel.id} rascunho={imovel.status === "rascunho"} podePublicar={podePublicar} />}
-    />
-  );
+  const faixa = <FaixaPrevia imovelId={imovel.id} rascunho={imovel.status === "rascunho"} podePublicar={podePublicar} />;
+  const publico = await imovelParaPagina(imovel);
+  // Mostra a página em capítulos (rascunho mais recente) se o corretor já gerou uma; senão, a página padrão.
+  const roteiro = await roteiroDaPrevia(corretor.id, imovel.id);
+  return roteiro ? <PaginaRoteiro imovel={publico} roteiro={roteiro.conteudo} faixa={faixa} /> : <PaginaImovel imovel={publico} faixa={faixa} />;
 }

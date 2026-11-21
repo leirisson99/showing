@@ -146,6 +146,10 @@ As 4 tools passaram a seguir o spec: `consultar_horarios` (até 6 horários com 
 - **Decisão sua: modelo e preço.** O modelo atual é `google/gemini-4-neon`; para trocar, compare custo e qualidade rodando `pnpm vitest run atendente.live` com cada `AI_MODEL`, e preencha `AI_PRECO_*` para o relatório mostrar o gasto. Revisar o relatório toda semana do piloto.
 - **Limite por minuto (RNF-10) continua em memória**, uma instância só. Com hospedagem que sobe várias instâncias (serverless), o teto diário protege o orçamento mesmo assim, mas o limite por IP precisa de armazenamento compartilhado: decidir no BK-10.
 
+## BK-10a · Imagem Docker — PRONTO (2026-11-20)
+
+`Dockerfile` em três alvos (`app`, `migrate`, `builder`), `.dockerignore`, `docker-compose.prod.yml` (banco + migrações + app) e `output: "standalone"`. Verificado: a imagem builda sem banco, sobe (421 MB, usuário `nextjs`, saudável pelo healthcheck) e serve `/`, `/login`, `/privacidade`, `/imovel/<slug>` (com o banco), `/sitemap.xml` e a imagem de compartilhamento; o alvo `migrate` roda `prisma migrate deploy`. Para o build passar sem banco, `generateStaticParams` do imóvel cai num endereço de reserva (o Cache Components exige ao menos um parâmetro). **Falta no BK-10:** escolher onde hospedar, domínio e HTTPS, `NEXT_PUBLIC_SITE_URL` real, Lighthouse, fixar versões e o cron da retenção.
+
 ## BK-10 · Deploy e qualidade (E3) — M
 
 - Fixar as versões das dependências, em especial `@strands-agents/sdk`.

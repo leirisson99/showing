@@ -326,3 +326,15 @@ Questões em aberto
 [ ] O corretor pode subir vídeo próprio para o hero, no lugar do montado?
 [ ] Qual modelo roda o agente e qual roda a checagem de fidelidade (custo por página gerada)?
 [ ] Nome final do produto e logo, que aparecem no rodapé "Página criada com Showing".
+
+## Implementação da fase 1 (2026-11-20): o que mudou em relação ao spec
+
+- **Sem GSAP nem Lenis:** o motion usa CSS e o hook de rolagem do projeto (`src/components/motion/use-secao.ts`, um único ouvinte com `requestAnimationFrame`), só `transform` e `opacity`. Sem dependência nova.
+- **Template `familia` exige 8 fotos, não 6:** 3 em `ambientes_fixo` + 5 em `galeria_horizontal` (só a capa pode repetir). Com menos, o validador obriga `essencial`.
+- **`ler_cadastro` não é uma tool:** a ficha e as fotos vão no prompt (como no Atendente). As tools são `validar_roteiro` e `salvar_rascunho`.
+- **Fotos em alias:** o agente vê `f1..fN`; o servidor troca pelos ids reais ao salvar.
+- **IA desligada:** o roteiro sai de `roteiroPadrao` (código), com os mesmos filtros. Se a IA falha 3 vezes, o corretor vê "Não consegui montar a página. Tente de novo." (spec).
+- **Filtros:** 1 (schema) e 2 (validador de regras) estão no código; o 3 (fidelidade por segundo modelo) fica para a fase 2.
+- **Edições do corretor:** texto editado dispensa `fontes` e a checagem de números, mas segue as regras de voz e de endereço. Editar uma versão aprovada cria uma nova versão; a que está no ar só muda quando ele aprova de novo. "Gerar de novo" sobre um rascunho editado pede confirmação.
+- **Troca de template pelo corretor:** nesta fase, por "Gerar de novo" com um pedido (ex.: "use o essencial"); o corretor tira e reordena capítulos direto na aba.
+- **Dúvidas:** os cartões abrem a bolha de chat já com a pergunta (o painel de chat embutido do design ficou para depois).

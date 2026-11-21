@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Check } from "lucide-react";
 import { LogoMarca } from "@/components/brand/Logo";
-import { suave, useSecao, useMovimentoReduzido } from "./use-secao";
+import { suave, useSecao, useMovimentoReduzido } from "@/components/motion/use-secao";
 
 type Fase = "inicio" | "meio" | "horarios" | "pedida";
 type Fala = { de: "c" | "a"; t: string };

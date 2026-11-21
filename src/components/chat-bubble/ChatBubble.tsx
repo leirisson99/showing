@@ -53,6 +53,9 @@ export default function ChatBubble({ imovelId, tituloImovel, corretor, imovel, w
   const avisoFim = useRef<HTMLDivElement>(null);
   const fim = useRef<HTMLDivElement>(null);
 
+  // Pergunta pedida pelos cartões da página ("Aceita financiamento?"): vai depois que a conversa estiver aberta.
+  const pergunta = useRef<string | null>(null);
+
   const abrir = useCallback(
     (modo: ModoChat) => {
       setAberto(true);
@@ -64,11 +67,23 @@ export default function ChatBubble({ imovelId, tituloImovel, corretor, imovel, w
   );
 
   useEffect(() => {
-    const aoPedir = (e: Event) => abrir((e as CustomEvent<ModoChat>).detail ?? "conversa");
+    const aoPedir = (e: Event) => {
+      const d = (e as CustomEvent<ModoChat | { modo: ModoChat; mensagem?: string }>).detail;
+      const modo = typeof d === "object" && d !== null ? d.modo : (d ?? "conversa");
+      if (typeof d === "object" && d !== null && d.mensagem) pergunta.current = d.mensagem;
+      abrir(modo);
+    };
     window.addEventListener(EVENTO_ABRIR_CHAT, aoPedir);
     window.dispatchEvent(new Event(EVENTO_CHAT_PRONTO));
     return () => window.removeEventListener(EVENTO_ABRIR_CHAT, aoPedir);
   }, [abrir]);
+
+  useEffect(() => {
+    if (!aberto || carregando || mensagens.length === 0 || digitando || !pergunta.current) return;
+    const m = pergunta.current;
+    pergunta.current = null;
+    void enviar(m);
+  }, [aberto, carregando, mensagens.length, digitando, enviar]);
 
   // Balão "Dúvidas sobre este imóvel?" depois de 8 s, uma vez por sessão.
   useEffect(() => {

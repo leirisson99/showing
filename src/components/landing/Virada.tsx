@@ -1,6 +1,6 @@
 "use client";
 
-import { limitar, suave, useSecao, useMovimentoReduzido } from "./use-secao";
+import { limitar, suave, useSecao, useMovimentoReduzido } from "@/components/motion/use-secao";
 
 const PALAVRAS = "E se o imóvel respondesse por você?".split(" ");
 const mistura = (a: number, b: number, t: number) => Math.round(a + (b - a) * t);

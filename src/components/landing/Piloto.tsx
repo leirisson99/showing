@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { AlertCircle, Check, Loader2 } from "lucide-react";
 import { registrarInteresseAction, type EstadoInteresse } from "@/app/interesse-piloto-actions";
-import { limitar, suave, useSecao, useMovimentoReduzido } from "./use-secao";
+import { limitar, suave, useSecao, useMovimentoReduzido } from "@/components/motion/use-secao";
 
 const inicial: EstadoInteresse = {};
 

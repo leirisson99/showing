@@ -183,7 +183,23 @@
   .lp-flutua, .lp-pulsa, .lp-deriva, .lp-pisca { animation: none; }
 }
 
-/* Rolagem suave nos links de âncora, só para quem não pediu menos movimento. */
+/* Rolagem suave nos links de âncora da página inicial, só para quem não pediu menos movimento.
+   Só nela: no painel a rolagem animada atrapalha (e os testes de navegador). */
 @media (prefers-reduced-motion: no-preference) {
-  html { scroll-behavior: smooth; }
+  html:has(.scroll-suave) { scroll-behavior: smooth; }
+}
+
+/* ---------- Página do imóvel em capítulos (docs/agent-diretor-pagina.md) ---------- */
+@keyframes pg-palavra {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes pg-surge {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: none; }
+}
+.pg-palavra { display: inline-block; animation: pg-palavra 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.pg-surge { animation: pg-surge 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .pg-palavra, .pg-surge { animation: none; }
 }

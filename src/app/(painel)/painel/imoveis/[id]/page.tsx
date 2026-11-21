@@ -5,6 +5,8 @@ import { EditorImovel, type Aba } from "@/components/painel/imovel/EditorImovel"
 import { urlDaFoto } from "@/lib/fotos";
 import { formatarDataHora } from "@/lib/format";
 import { listarConversas, listarVisitas } from "@/lib/painel/atendimentos";
+import { iaConfigurada } from "@/lib/ai/modelo";
+import { buscarPaginaDoPainel } from "@/lib/pagina/servico";
 import { buscarImovel } from "@/lib/painel/imoveis";
 import { metricasPorImovel } from "@/lib/painel/metricas";
 import { buscarPerfil, perfilCompleto } from "@/lib/painel/perfil";
@@ -15,7 +17,7 @@ import { exigirCorretor } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Editar imóvel — Showing", robots: { index: false } };
 
-const ABAS: Aba[] = ["dados", "caracteristicas", "fotos", "texto", "revisao", "desempenho"];
+const ABAS: Aba[] = ["dados", "caracteristicas", "fotos", "texto", "revisao", "pagina", "desempenho"];
 
 export default async function EditarImovelPage({ params, searchParams }: PageProps<"/painel/imoveis/[id]">) {
   const { id } = await params;
@@ -57,6 +59,9 @@ export default async function EditarImovelPage({ params, searchParams }: PagePro
   const pedida = typeof aba === "string" && (ABAS as string[]).includes(aba) ? (aba as Aba) : null;
   const abaInicial: Aba = pedida && !(rascunho && pedida === "desempenho") ? pedida : "dados";
 
+  const paginaDoPainel = await buscarPaginaDoPainel(corretor.id, imovel.id);
+  const versao = (v: NonNullable<typeof paginaDoPainel>["rascunho"]) => (v ? { versao: v.versao, aprovado: v.aprovado, conteudo: v.conteudo, relatorio: v.relatorio } : null);
+
   const [perfil, metricas, conversas, visitas] = await Promise.all([
     buscarPerfil(corretor.id),
     metricasPorImovel(corretor.id, 30),
@@ -83,6 +88,7 @@ export default async function EditarImovelPage({ params, searchParams }: PagePro
           .slice(0, 6)
           .map((v) => ({ id: v.id, quando: formatarDataHora(v.dataHora), status: v.status, nome: v.comprador?.nome ?? "Comprador" }))}
         abaInicial={abaInicial}
+        pagina={{ rascunho: versao(paginaDoPainel?.rascunho ?? null), aprovada: versao(paginaDoPainel?.aprovada ?? null), iaLigada: iaConfigurada() }}
       />
     </main>
   );

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { CalendarDays, MessageCircle, ArrowDown } from "lucide-react";
 import { LogoMarca } from "@/components/brand/Logo";
-import { limitar, useRolagem, useMovimentoReduzido } from "./use-secao";
+import { limitar, useRolagem, useMovimentoReduzido } from "@/components/motion/use-secao";
 
 const CONVERSAS = [
   { hora: "Hoje, 23:12", frase: "dormindo.", c: "Esse apartamento aceita financiamento?", a: "Aceita, sim: financiamento e FGTS. Quer visitar? Tenho horários amanhã.", fim: "horarios", nt: "Nova visita pedida", nd: "Enquanto você dormia" },

@@ -3,7 +3,7 @@ import type { ImovelPublico } from "@/lib/imoveis";
 
 // RN-05: por padrão mostra só a região aproximada (coordenada arredondada, sem
 // marcador). O endereço e o ponto exato só aparecem se o corretor marcou `mostrarEndereco`.
-export function MapaRegiao({ imovel }: { imovel: ImovelPublico }) {
+export function MapaRegiao({ imovel, cheio = false }: { imovel: ImovelPublico; /** Só o mapa, preenchendo o espaço (página em capítulos). */ cheio?: boolean }) {
   const { latitude, longitude, mostrarEndereco, endereco, bairro, cidade } = imovel;
   const exato = mostrarEndereco && endereco;
 
@@ -14,6 +14,12 @@ export function MapaRegiao({ imovel }: { imovel: ImovelPublico }) {
     const d = exato ? 0.004 : 0.012;
     const bbox = [lon - d, lat - d, lon + d, lat + d].join(",");
     src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik${exato ? `&marker=${lat},${lon}` : ""}`;
+  }
+
+  if (cheio) {
+    return src ? (
+      <iframe title={`Mapa da região do ${bairro}, ${cidade}`} src={src} loading="lazy" referrerPolicy="no-referrer" className="size-full border-0" />
+    ) : null;
   }
 
   return (

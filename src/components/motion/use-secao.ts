@@ -102,3 +102,23 @@ export function useRolagem(): { y: number; vh: number } {
   }, []);
   return r;
 }
+
+/** Falso no servidor e na primeira renderização; verdadeiro depois que a página hidrata. Quem anima por rolagem espera isto: sem JavaScript, tudo aparece pronto. */
+export function useHidratado(): boolean {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+}
+
+/** Quanto cada preset de movimento amplia os deslocamentos. `minimo` só mexe na opacidade. */
+export const AMPLITUDE = { suave: 1, marcante: 1.7, minimo: 0 } as const;
+export type Preset = keyof typeof AMPLITUDE;
+
+/** Animar por rolagem? Só depois de hidratar e se o usuário não pediu menos movimento. */
+export function useAnima(): boolean {
+  const hidratado = useHidratado();
+  const reduzido = useMovimentoReduzido();
+  return hidratado && !reduzido;
+}

@@ -54,7 +54,7 @@ const PERGUNTAS: ItemFaq[] = [
 // capítulos. O texto está todo no HTML; o movimento é só apresentação.
 export default function Home() {
   return (
-    <div className={`${fonteDisplay.variable} ${fonteTexto.variable} tema-marca font-[family-name:var(--font-inter)] text-(--auth-ink)`}>
+    <div className={`${fonteDisplay.variable} ${fonteTexto.variable} tema-marca scroll-suave font-[family-name:var(--font-inter)] text-(--auth-ink)`}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializarJsonLd(jsonLdSite(DESCRICAO)) }} />
       <Cabecalho />
       <main>
