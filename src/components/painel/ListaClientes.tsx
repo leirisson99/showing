@@ -82,7 +82,7 @@ export function ListaClientes({ itens }: { itens: ItemCliente[] }) {
       {visiveis.length === 0 ? (
         <p className="py-8 text-center text-muted-foreground">Nenhum cliente encontrado.</p>
       ) : (
-        <ul className="grid gap-3 lg:grid-cols-2">
+        <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2 [&>li]:min-w-0">
           {visiveis.map((c) => (
             <li key={c.id} className="flex flex-col gap-3 rounded-3xl bg-card p-5 ring-1 ring-foreground/10">
               <div className="flex items-start justify-between gap-3">

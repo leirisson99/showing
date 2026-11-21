@@ -16,7 +16,7 @@ const LINKS = [
 export function NavPainel({ pendentes = 0 }: { pendentes?: number }) {
   const caminho = usePathname();
   return (
-    <nav aria-label="Painel" className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 md:pb-0">
+    <nav aria-label="Painel" className="relative -mx-1 flex gap-1 overflow-x-auto px-1 pb-1 md:pb-0">
       {LINKS.map(({ href, rotulo, exato }) => {
         const ativo = exato ? caminho === href : caminho.startsWith(href);
         return (

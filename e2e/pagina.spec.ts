@@ -22,7 +22,7 @@ test.describe("página em capítulos", () => {
     await page.goto("/imovel/apartamento-2-quartos-victor-konder-blumenau");
     await expect(page.getByRole("heading", { level: 1, name: /Apartamento com sacada no Victor Konder/ })).toBeVisible();
     await expect(page.getByRole("heading", { level: 2 }).first()).toBeVisible();
-    await expect(page.getByRole("navigation", { name: "Capítulos" })).toBeAttached();
+    await expect(page.locator('nav[aria-label="Capítulos"]')).toBeAttached(); // no celular fica escondido (só o capítulo atual aparece)
     await expect(page.getByText("página criada com Showing")).toBeVisible();
 
     // Volta para a página padrão: o resto da suíte espera a página original.
