@@ -23,9 +23,16 @@ async function enviarLink(email: string): Promise<boolean> {
     if (!corretor) return true;
     await signIn("email", { email, redirect: false, redirectTo: "/painel" });
     return true;
-  } catch {
-    // Banco ou e-mail indisponível: mensagem genérica, sem expor o erro nem o e-mail.
-    console.error("Falha ao enviar o link de acesso.");
+  } catch (erro) {
+    // Banco ou e-mail indisponível: o usuário vê uma mensagem genérica; o log traz só o tipo
+    // e o código do erro (nunca a mensagem, que pode conter o e-mail).
+    const e = erro as { name?: string; code?: string; type?: string; cause?: { name?: string; code?: string } };
+    console.error("Falha ao enviar o link de acesso.", {
+      tipo: e?.name,
+      codigo: e?.code ?? e?.type,
+      causa: e?.cause?.name,
+      codigoCausa: e?.cause?.code,
+    });
     return false;
   }
 }
