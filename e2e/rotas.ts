@@ -10,6 +10,7 @@ export const ROTAS_PUBLICAS: Rota[] = [
   { nome: "imovel", caminho: `/imovel/${SLUG_PUBLICADO}` },
   { nome: "imovel-vendido", caminho: `/imovel/${SLUG_VENDIDO}` },
   { nome: "login", caminho: "/login" },
+  { nome: "cadastro", caminho: "/cadastro" },
   { nome: "login-verificar", caminho: "/login/verificar?email=corretor@exemplo.com" },
   { nome: "privacidade", caminho: "/privacidade" },
 ];

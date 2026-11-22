@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useState, type FormEvent } from "react";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { loginSchema } from "@/lib/auth-schema";
@@ -7,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { pedirLink, type EstadoLogin } from "./actions";
 
 const inicial: EstadoLogin = {};
-const AJUDA = "Use o e-mail cadastrado no piloto.";
+const AJUDA = "Use o e-mail do seu cadastro.";
 
 export function FormLogin() {
   const [estado, action, pendente] = useActionState(pedirLink, inicial);
@@ -77,6 +78,13 @@ export function FormLogin() {
           {pendente ? "Enviando…" : "Receber link de acesso"}
         </button>
       </form>
+
+      <p className="text-[14px] text-(--auth-ink-muted)">
+        Ainda não tem conta?{" "}
+        <Link href="/cadastro" className="inline-flex min-h-11 items-center text-(--auth-primary) underline underline-offset-2 md:min-h-0">
+          Criar conta
+        </Link>
+      </p>
 
       <p className="text-[13px] text-(--auth-ink-muted)">
         Ao entrar, você concorda com a{" "}
