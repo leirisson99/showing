@@ -21,6 +21,17 @@ const linkMagico: EmailConfig = {
     const link = new URL(url);
     link.protocol = origem.protocol;
     link.host = origem.host;
+    // O callbackUrl (para onde o corretor vai depois de entrar) também nasce do host em que o
+    // servidor escuta (0.0.0.0:80 no contêiner); troca por caminho + domínio público.
+    const destino = link.searchParams.get("callbackUrl");
+    if (destino) {
+      try {
+        const d = new URL(destino, origem);
+        link.searchParams.set("callbackUrl", `${origem.origin}${d.pathname}${d.search}`);
+      } catch {
+        link.searchParams.delete("callbackUrl");
+      }
+    }
 
     await enviarEmail({
       para: identifier,
