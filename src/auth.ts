@@ -4,6 +4,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { db } from "@/lib/db";
 import { enviarEmail } from "@/lib/email";
 import { usarMocks } from "@/lib/mocks";
+import { linkDeConfirmacao } from "@/lib/link-acesso";
 import { urlDoSite } from "@/lib/seo";
 import { LinkDeAcesso } from "@/emails/link-de-acesso";
 
@@ -16,27 +17,15 @@ const linkMagico: EmailConfig = {
   name: "E-mail",
   maxAge: MINUTOS_DE_VALIDADE * 60,
   async sendVerificationRequest({ identifier, url }) {
-    // O host do link vem de NEXT_PUBLIC_SITE_URL, não do cabeçalho da requisição.
-    const origem = new URL(urlDoSite());
-    const link = new URL(url);
-    link.protocol = origem.protocol;
-    link.host = origem.host;
-    // O callbackUrl (para onde o corretor vai depois de entrar) também nasce do host em que o
-    // servidor escuta (0.0.0.0:80 no contêiner); troca por caminho + domínio público.
-    const destino = link.searchParams.get("callbackUrl");
-    if (destino) {
-      try {
-        const d = new URL(destino, origem);
-        link.searchParams.set("callbackUrl", `${origem.origin}${d.pathname}${d.search}`);
-      } catch {
-        link.searchParams.delete("callbackUrl");
-      }
-    }
+    // O e-mail leva à tela de confirmação (botão), não ao link que consome o token: leitores de
+    // e-mail com verificação de links gastariam o token antes do clique. O domínio vem de
+    // NEXT_PUBLIC_SITE_URL, não do cabeçalho da requisição.
+    const link = linkDeConfirmacao(url, urlDoSite());
 
     await enviarEmail({
       para: identifier,
       assunto: "Seu link de acesso ao Showing",
-      template: LinkDeAcesso({ link: link.toString() }),
+      template: LinkDeAcesso({ link }),
     });
   },
 };
