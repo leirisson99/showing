@@ -12,11 +12,11 @@ export function limiteDiario(): number {
   return Number.isInteger(n) && n > 0 ? n : 300;
 }
 
-export async function registrarUso(tipo: "chat" | "descricao" | "pagina", uso: UsoDeTokens, imovelId?: string): Promise<void> {
+export async function registrarUso(tipo: "chat" | "descricao" | "pagina", uso: UsoDeTokens, imovelId?: string, corretorId?: string): Promise<void> {
   if (usarMocks()) return;
   try {
     await db.usoIA.create({
-      data: { tipo, modelo: process.env.AI_MODEL ?? "desconhecido", imovelId: imovelId ?? null, entradaTokens: uso.entrada, saidaTokens: uso.saida },
+      data: { tipo, modelo: process.env.AI_MODEL ?? "desconhecido", imovelId: imovelId ?? null, corretorId: corretorId ?? null, entradaTokens: uso.entrada, saidaTokens: uso.saida },
     });
   } catch {
     // Medir o custo nunca pode derrubar a conversa.

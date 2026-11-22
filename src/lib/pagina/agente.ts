@@ -19,9 +19,9 @@ export type ResultadoGeracao = { ok: true; roteiro: Roteiro; tentativas: number 
 
 const ERRO_FINAL = "Não consegui montar a página. Tente de novo.";
 
-type Opcoes = { instrucao?: string; modelo?: Model };
+type Opcoes = { instrucao?: string; modelo?: Model; imovelId?: string; corretorId?: string };
 
-export async function gerarRoteiroComIA(e: EntradaRoteiro, { instrucao, modelo }: Opcoes = {}): Promise<ResultadoGeracao> {
+export async function gerarRoteiroComIA(e: EntradaRoteiro, { instrucao, modelo, imovelId, corretorId }: Opcoes = {}): Promise<ResultadoGeracao> {
   const { entrada, paraReal } = comAliasDeFotos(e);
   let reprovacoes = 0;
   let esgotou = false;
@@ -70,7 +70,7 @@ export async function gerarRoteiroComIA(e: EntradaRoteiro, { instrucao, modelo }
   try {
     const r = await agente.invoke(pedido);
     const uso = r.metrics?.accumulatedUsage;
-    void registrarUso("pagina", { entrada: uso?.inputTokens ?? 0, saida: uso?.outputTokens ?? 0 });
+    void registrarUso("pagina", { entrada: uso?.inputTokens ?? 0, saida: uso?.outputTokens ?? 0 }, imovelId, corretorId);
   } catch {
     console.error("pagina: falha do modelo ao gerar o roteiro");
     return { ok: false, erro: ERRO_FINAL };

@@ -36,7 +36,7 @@ export async function criarRascunhoAction(entrada: unknown): Promise<Resultado<{
   const dados = etapaDadosSchema.safeParse(entrada);
   if (!dados.success) return { ok: false, erro: dados.error.issues[0].message };
 
-  const texto = await gerarTituloEDescricao({ ...dados.data, caracteristicas: [], infoAdicional: null });
+  const texto = await gerarTituloEDescricao({ ...dados.data, caracteristicas: [], infoAdicional: null }, undefined, corretor.id);
   const novo = await criarImovel(corretor.id, { ...dados.data, ...texto, caracteristicas: [], infoAdicional: null });
   revalidatePath("/painel/imoveis");
   return { ok: true, id: novo.id };
@@ -129,7 +129,7 @@ export async function legendarFotoAction(imovelId: unknown, fotoId: unknown, leg
 
 // RN-06: só devolve texto para o formulário; quem salva e publica é o corretor.
 export async function gerarDescricaoAction(entrada: unknown): Promise<Resultado<{ texto: TextoGerado }>> {
-  await exigirCorretor();
+  const corretor = await exigirCorretor();
   const dados = imovelSchema
     .pick({
       tipo: true, finalidade: true, bairro: true, cidade: true, quartos: true, suites: true, banheiros: true,
@@ -137,5 +137,5 @@ export async function gerarDescricaoAction(entrada: unknown): Promise<Resultado<
     })
     .safeParse(entrada);
   if (!dados.success) return { ok: false, erro: "Preencha tipo, bairro, cidade e as medidas antes de gerar." };
-  return { ok: true, texto: await gerarTituloEDescricao(dados.data) };
+  return { ok: true, texto: await gerarTituloEDescricao(dados.data, undefined, corretor.id) };
 }

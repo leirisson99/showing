@@ -229,11 +229,15 @@ model UsoIA {
   tipo          String // "chat" ou "descricao"
   modelo        String
   imovelId      String?
+  // Quem gerou o gasto (dono do imóvel ou corretor logado). Nulo nas linhas antigas: o painel
+  // admin cai no dono do imóvel quando há imovelId.
+  corretorId    String?
   entradaTokens Int      @default(0)
   saidaTokens   Int      @default(0)
   criadoEm      DateTime @default(now())
 
   @@index([criadoEm])
+  @@index([corretorId])
 }
 
 // Corretor que deixou o e-mail na página inicial para falar sobre o piloto (BK-11). Só o e-mail:

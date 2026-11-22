@@ -13,11 +13,11 @@ const LINKS = [
   { href: "/painel/perfil", rotulo: "Perfil", exato: false },
 ];
 
-export function NavPainel({ pendentes = 0 }: { pendentes?: number }) {
+export function NavPainel({ pendentes = 0, admin = false }: { pendentes?: number; admin?: boolean }) {
   const caminho = usePathname();
   return (
     <nav aria-label="Painel" className="relative -mx-1 flex gap-1 overflow-x-auto px-1 pb-1 md:pb-0">
-      {LINKS.map(({ href, rotulo, exato }) => {
+      {(admin ? [...LINKS, { href: "/painel/admin", rotulo: "Admin", exato: false }] : LINKS).map(({ href, rotulo, exato }) => {
         const ativo = exato ? caminho === href : caminho.startsWith(href);
         return (
           <Link

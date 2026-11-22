@@ -1,10 +1,11 @@
 import { cache } from "react";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { CORRETOR_MOCK, usarMocks } from "@/lib/mocks";
 import { perfis } from "@/mocks/corretor";
+import { ehAdmin } from "@/lib/painel/admin";
 
 // Corretor logado. Toda consulta do painel parte do id devolvido aqui (RN-07).
 export const exigirCorretor = cache(async () => {
@@ -28,3 +29,14 @@ export const exigirCorretor = cache(async () => {
 
   return corretor;
 });
+
+/** Só para quem está em ADMIN_EMAILS; os demais veem 404, como se a rota não existisse. Em USAR_MOCKS o corretor fixo é admin. */
+export async function exigirAdmin() {
+  const corretor = await exigirCorretor();
+  if (!usarMocks() && !ehAdmin(corretor.email)) notFound();
+  return corretor;
+}
+
+export async function corretorEhAdmin(email: string): Promise<boolean> {
+  return usarMocks() || ehAdmin(email);
+}

@@ -68,7 +68,7 @@ export async function gerarPagina(corretorId: string, imovelId: string, { instru
   let tentativas: number | undefined;
 
   if (iaConfigurada()) {
-    const g = await gerarRoteiroComIA(entrada, { instrucao });
+    const g = await gerarRoteiroComIA(entrada, { instrucao, imovelId, corretorId });
     if (!g.ok) return { ok: false, erro: g.erro };
     roteiro = g.roteiro;
     origem = "ia";

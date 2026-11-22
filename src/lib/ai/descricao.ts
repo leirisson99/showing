@@ -28,10 +28,10 @@ const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um :
 
 // RN-06: o texto é só um rascunho; o corretor revisa e salva. Usa a IA quando está configurada e,
 // se ela falhar ou inventar algo, cai no texto montado só com os dados da ficha (abaixo).
-export async function gerarTituloEDescricao(f: FichaDescricao, modelo?: Model): Promise<TextoGerado> {
+export async function gerarTituloEDescricao(f: FichaDescricao, modelo?: Model, corretorId?: string): Promise<TextoGerado> {
   if (modelo || iaConfigurada()) {
     try {
-      const texto = await gerarComIA(f, modelo ?? criarModelo());
+      const texto = await gerarComIA(f, modelo ?? criarModelo(), corretorId);
       if (texto) return texto;
     } catch {
       console.error("ia: falha ao gerar a descrição; usando o texto padrão");
@@ -69,11 +69,11 @@ function numerosPermitidos(f: FichaDescricao): Set<string> {
   return new Set(origem.flatMap(digitos));
 }
 
-async function gerarComIA(f: FichaDescricao, modelo: Model): Promise<TextoGerado | null> {
+async function gerarComIA(f: FichaDescricao, modelo: Model, corretorId?: string): Promise<TextoGerado | null> {
   const agente = new Agent({ model: modelo, systemPrompt: INSTRUCOES, printer: false });
   const r = await agente.invoke(fichaEmTexto(f));
   const uso = r.metrics?.accumulatedUsage;
-  void registrarUso("descricao", { entrada: uso?.inputTokens ?? 0, saida: uso?.outputTokens ?? 0 });
+  void registrarUso("descricao", { entrada: uso?.inputTokens ?? 0, saida: uso?.outputTokens ?? 0 }, undefined, corretorId);
 
   const bruto = r.lastMessage.content.map((b) => ("text" in b && typeof b.text === "string" ? b.text : "")).join("");
   const json = bruto.match(/\{[\s\S]*\}/)?.[0];
