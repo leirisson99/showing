@@ -36,6 +36,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   // sempre NEXT_PUBLIC_SITE_URL, então confiar no host aqui não muda para onde o link aponta.
   trustHost: true,
   providers: [linkMagico],
+  // Log sem dado pessoal. Em "Verification", diz o motivo: token não achado (hasInvite: false), expirado
+  // (expired: true) ou de outro e-mail.
+  logger: {
+    error(erro) {
+      const causa = erro.cause as { hasInvite?: boolean; expired?: boolean } | undefined;
+      console.error("[auth][error]", (erro as { type?: string }).type ?? erro.name, causa && typeof causa === "object" ? { hasInvite: causa.hasInvite, expired: causa.expired } : "");
+    },
+  },
   // JWT: o proxy confere a sessão sem consultar o banco.
   session: { strategy: "jwt" },
   pages: { signIn: "/login", verifyRequest: "/login/verificar", error: "/login" },
