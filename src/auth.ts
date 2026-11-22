@@ -32,6 +32,9 @@ const linkMagico: EmailConfig = {
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(db),
+  // O app roda atrás de um proxy (Easypanel, Caddy, Nginx): o host vem do cabeçalho dele. O link do e-mail usa
+  // sempre NEXT_PUBLIC_SITE_URL, então confiar no host aqui não muda para onde o link aponta.
+  trustHost: true,
   providers: [linkMagico],
   // JWT: o proxy confere a sessão sem consultar o banco.
   session: { strategy: "jwt" },
