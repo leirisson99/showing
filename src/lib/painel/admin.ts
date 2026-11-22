@@ -70,3 +70,11 @@ export function porSemana(datas: Date[], semanas: number, agora = new Date()): {
   }
   return lista;
 }
+
+export const POR_PAGINA = 15;
+
+/** Número da página vindo da URL: inteiro >= 1; qualquer outra coisa vira 1. */
+export function lerPagina(valor: string | string[] | undefined): number {
+  const n = Number(Array.isArray(valor) ? valor[0] : valor);
+  return Number.isInteger(n) && n >= 1 ? n : 1;
+}

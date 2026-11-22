@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ehAdmin, gastoPorCorretor, gastoPorDia, porSemana, somarUso, type LinhaDeUso } from "./admin";
+import { ehAdmin, gastoPorCorretor, lerPagina, gastoPorDia, porSemana, somarUso, type LinhaDeUso } from "./admin";
 
 const preco = { AI_PRECO_ENTRADA: "1", AI_PRECO_SAIDA: "2" };
 const linha = (o: Partial<LinhaDeUso>): LinhaDeUso => ({ tipo: "chat", imovelId: null, corretorId: null, entradaTokens: 1_000_000, saidaTokens: 0, criadoEm: new Date("2026-11-20T15:00:00Z"), ...o });
@@ -33,6 +33,12 @@ describe("admin", () => {
     expect(m.get("c1")?.chamadas).toBe(1);
     expect(m.get("c2")?.chamadas).toBe(1);
     expect(m.get(null)?.chamadas).toBe(1);
+  });
+
+  it("lerPagina aceita só inteiro >= 1", () => {
+    expect(lerPagina("3")).toBe(3);
+    expect(lerPagina(["2", "5"])).toBe(2);
+    for (const ruim of [undefined, "0", "-1", "abc", "1.5"]) expect(lerPagina(ruim)).toBe(1);
   });
 
   it("porSemana agrupa pelas últimas semanas", () => {

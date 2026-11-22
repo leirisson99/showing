@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { usarMocks } from "@/lib/mocks";
 import type { StatusImovel } from "@/generated/prisma/client";
-import { gastoPorCorretor, gastoPorDia, gastoPorTipo, porSemana, somarUso, type Gasto, type LinhaDeUso } from "./admin";
+import { POR_PAGINA, gastoPorCorretor, gastoPorDia, gastoPorTipo, porSemana, somarUso, type Gasto, type LinhaDeUso } from "./admin";
 
 // Visão do admin: só agregações e dados do próprio corretor. Nada do comprador (nome, telefone, e-mail, mensagens).
 
@@ -22,6 +22,8 @@ export type ResumoAdmin = {
   paginas: {
     porStatus: Record<StatusImovel, number>;
     porSemana: { inicio: Date; total: number }[];
+    pagina: number;
+    totalPaginas: number;
     recentes: { id: string; titulo: string; slug: string; status: StatusImovel; criadoEm: Date; corretor: string }[];
   };
   visitas30: number;
@@ -29,14 +31,14 @@ export type ResumoAdmin = {
 
 const zero: Gasto = { chamadas: 0, entrada: 0, saida: 0, custo: null };
 
-export async function resumoAdmin(agora = new Date()): Promise<ResumoAdmin> {
+export async function resumoAdmin(agora = new Date(), pagina = 1): Promise<ResumoAdmin> {
   if (usarMocks()) {
     return {
       gasto: { dia7: zero, dia30: zero, total: zero },
       gastoPorDia: gastoPorDia([], DIAS, agora),
       gastoPorTipo: [],
       usuarios: { total: 0, porSemana: porSemana([], SEMANAS, agora), lista: [], gastoSemDono: zero },
-      paginas: { porStatus: { rascunho: 0, publicado: 0, vendido: 0 }, porSemana: porSemana([], SEMANAS, agora), recentes: [] },
+      paginas: { porStatus: { rascunho: 0, publicado: 0, vendido: 0 }, porSemana: porSemana([], SEMANAS, agora), pagina: 1, totalPaginas: 1, recentes: [] },
       visitas30: 0,
     };
   }
@@ -56,7 +58,8 @@ export async function resumoAdmin(agora = new Date()): Promise<ResumoAdmin> {
     db.imovel.groupBy({ by: ["status"], _count: { _all: true } }),
     db.imovel.findMany({
       orderBy: { criadoEm: "desc" },
-      take: 15,
+      skip: (pagina - 1) * POR_PAGINA,
+      take: POR_PAGINA,
       select: { id: true, titulo: true, slug: true, status: true, criadoEm: true, corretor: { select: { name: true, email: true } } },
     }),
     db.visita.count({ where: { criadaEm: { gte: desde30 } } }),
@@ -94,6 +97,8 @@ export async function resumoAdmin(agora = new Date()): Promise<ResumoAdmin> {
     },
     paginas: {
       porStatus: status,
+      pagina,
+      totalPaginas: Math.max(1, Math.ceil(imoveis.length / POR_PAGINA)),
       porSemana: porSemana(imoveis.map((i) => i.criadoEm).filter((d) => d >= desdeSemanas), SEMANAS, agora),
       recentes: recentes.map((i) => ({ id: i.id, titulo: i.titulo, slug: i.slug, status: i.status, criadoEm: i.criadoEm, corretor: i.corretor.name ?? i.corretor.email })),
     },

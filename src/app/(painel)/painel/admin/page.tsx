@@ -5,7 +5,8 @@ import { CabecalhoPagina } from "@/components/painel/CabecalhoPagina";
 import { CartaoMetrica } from "@/components/painel/CartaoMetrica";
 import { formatarData, formatarDataHora } from "@/lib/format";
 import { resumoAdmin } from "@/lib/painel/admin-db";
-import type { Gasto } from "@/lib/painel/admin";
+import { lerPagina, type Gasto } from "@/lib/painel/admin";
+import { PaginacaoAdmin } from "@/components/painel/admin/PaginacaoAdmin";
 import { exigirAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Admin — Showing", robots: { index: false } };
@@ -18,9 +19,10 @@ function textoGasto(g: Gasto) {
   return g.custo === null ? `${numero.format(g.entrada + g.saida)} tokens` : dolar.format(g.custo);
 }
 
-export default async function AdminPage() {
+export default async function AdminPage({ searchParams }: PageProps<"/painel/admin">) {
   await exigirAdmin();
-  const r = await resumoAdmin();
+  const pagina = lerPagina((await searchParams).pagina);
+  const r = await resumoAdmin(new Date(), pagina);
   const semPreco = r.gasto.dia30.custo === null;
   const custoPorVisita = r.gasto.dia30.custo !== null && r.visitas30 > 0 ? dolar.format(r.gasto.dia30.custo / r.visitas30) : "—";
 
@@ -98,12 +100,19 @@ export default async function AdminPage() {
         <BarrasPorPeriodo titulo="Imóveis criados por semana (8 semanas)" itens={r.paginas.porSemana.map((s) => ({ rotulo: formatarData(s.inicio).slice(0, 6), valor: s.total, texto: String(s.total) }))} />
         <div className="overflow-x-auto">
           <table className="w-full min-w-[32rem] text-left text-sm">
-            <caption className="sr-only">Últimos imóveis criados</caption>
+            <caption className="sr-only">Imóveis criados, do mais recente ao mais antigo</caption>
             <thead className="text-muted-foreground"><tr><th className="py-2 font-medium">Imóvel</th><th className="font-medium">Corretor</th><th className="font-medium">Status</th><th className="font-medium">Criado em</th></tr></thead>
             <tbody>
               {r.paginas.recentes.map((i) => (
                 <tr key={i.id} className="border-t">
-                  <td className="py-2">{i.status === "publicado" ? <a className="font-medium underline-offset-4 hover:underline" href={`/imovel/${i.slug}`}>{i.titulo}</a> : <span className="font-medium">{i.titulo}</span>}</td>
+                  <td className="py-2">{i.status === "rascunho" ? (
+                      <span className="font-medium">{i.titulo}<span className="block text-xs font-normal text-muted-foreground">Rascunho: a página pública ainda não existe</span></span>
+                    ) : (
+                      <a className="font-medium underline underline-offset-4" href={`/imovel/${i.slug}`} target="_blank" rel="noopener noreferrer">
+                        {i.titulo}<span className="sr-only"> (abre em nova aba)</span>
+                        <span className="block text-xs font-normal text-muted-foreground no-underline">/imovel/{i.slug}</span>
+                      </a>
+                    )}</td>
                   <td>{i.corretor}</td>
                   <td className="capitalize">{i.status}</td>
                   <td>{formatarDataHora(i.criadoEm)}</td>
@@ -113,6 +122,7 @@ export default async function AdminPage() {
             </tbody>
           </table>
         </div>
+        <PaginacaoAdmin pagina={r.paginas.pagina} totalPaginas={r.paginas.totalPaginas} />
       </section>
     </main>
   );
