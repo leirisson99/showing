@@ -55,8 +55,14 @@ RUN groupadd --system --gid 1001 nodejs && useradd --system --uid 1001 --gid nod
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+# Ferramentas de banco (migrate + seed) usadas pelo entrypoint; o servidor continua enxuto.
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules /tool/node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/prisma /tool/prisma
+COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.ts /app/package.json /tool/
+COPY --from=builder --chown=nextjs:nodejs /app/src/generated /tool/src/generated
+COPY --chown=nextjs:nodejs docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 USER nextjs
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:'+process.env.PORT+'/robots.txt').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
-CMD ["node", "server.js"]
+ENTRYPOINT ["docker-entrypoint.sh"]
